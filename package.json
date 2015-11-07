@@ -1,0 +1,49 @@
+{
+    "name": "apep",
+    "version": "0.0.0",
+    "description": "Parser Combinator Library",
+    "author": "Matt Bierner",
+    "homepage": "http://bennu-js.com",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/mattbierner/apep.git"
+    },
+    "keywords": [
+        "parse",
+        "parser",
+        "combinator",
+        "combinatory",
+        "combinatory parsing",
+        "functional"],
+
+    "main": "index.js",
+    "directories": {
+        "lib": "dist_node/"
+    },
+    "files": [
+        "dist_node/",
+        "lib/",
+        "tests/",
+        "index.js",
+        "test.js"
+    ],
+    "dependencies": { },
+    "devDependencies": {
+        "babel-polyfill": "^6.0.16",
+        "babel-preset-es2015": "^6.1.0",
+        "gulp": "^3.9.0",
+        "gulp-babel": "^6.1.0",
+        "gulp-plumber": "^1.0.0",
+        "gulp-sourcemaps": "^1.6.0",
+        "mocha": "^2.3.0"
+    },
+    
+    "scripts": {
+        "test": "node test.js",
+        
+        "build": "npm run build-amd && npm run build-node",
+        "build-amd": "khepri lib -o dist",
+        "build-node": "khepri lib -o dist_node --package_manager=node"
+    }
+}
