@@ -11,7 +11,6 @@ it('Should output empty string with no parameters', () => {
     assert.strictEqual('', n[0]);
 });
 
-
 it('Should convert input to string', () => {
     const p = gen.exec(gen.str(5));
     const n = Array.from(p);
@@ -19,6 +18,11 @@ it('Should convert input to string', () => {
     assert.strictEqual('5', n[0]);
 });
 
+it('Should convert custom object to string', () => {
+    const o = { toString: () => 'abc' }
 
+    const p = gen.run(gen.str(o));
+    assert.strictEqual('abc', p);
+});
 
 });

@@ -176,6 +176,7 @@ export const seq = (...elements) =>
     elements.reduceRight((p, c) => next(c, p));
 
 /**
+    Map function `f` over each element produced by `p`.
 */
 export const map = (p, f) =>
     new Generador(() =>
@@ -191,7 +192,7 @@ export const map = (p, f) =>
     Choose from along one or more generators, each with its own custom weight.
 */
 export const weightedChoice = (weightMap) => {
-    const table = walker(weightMap);
+    const table = walker(weightMap.map(x => [x[0], wrap(x[1])]));
     return new Generador(() =>
         function*(s, r) {
             const selected = table(r);
@@ -201,9 +202,17 @@ export const weightedChoice = (weightMap) => {
 
 /**
      Choose from along one or more generators, each with the same weight.
+     
+     @param elements Array of elements
+*/
+export const choicea = (elements) =>
+    weightedChoice(elements.map(x => [1, x]));
+
+/**
+     Choose from along one or more generators taken as arguments.
 */
 export const choice = (...elements) =>
-    weightedChoice(elements.map((x) => [1, x]));
+    choicea(elements);
 
 /**
     Begin the execution of a generator.

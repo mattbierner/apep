@@ -14,6 +14,11 @@ describe('choice', function () {
         assert.strictEqual('4', n[0]);
     });
 
+    it('Arguments are wrapped', function () {
+        var p = gen.run(gen.choice('abc'));
+        assert.strictEqual('abc', p);
+    });
+
     it('Multiple choice is split around 0.5', function () {
         var p = gen.choice(gen.str(1), gen.str(2));
         {

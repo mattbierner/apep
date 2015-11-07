@@ -12,6 +12,11 @@ it('Single input always returns that value', () => {
     assert.strictEqual('4', n[0]);
 });
 
+it('Arguments are wrapped', () => {
+    const p = gen.run(gen.choice('abc'));
+    assert.strictEqual('abc', p);
+});
+
 it('Multiple choice is split around 0.5', () => {
     const p = gen.choice(gen.str(1), gen.str(2));
     {
@@ -26,7 +31,6 @@ it('Multiple choice is split around 0.5', () => {
     }
 });
 
-
 it('Many choices have equal probability', () => {
     const p = gen.choice(gen.str(0), gen.str(1), gen.str(2), gen.str(3));
     
@@ -37,5 +41,6 @@ it('Many choices have equal probability', () => {
         assert.strictEqual('' + i, n[0]);
     }    
 });
+
 
 });

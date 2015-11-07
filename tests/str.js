@@ -19,5 +19,14 @@ describe('str', function () {
         assert.strictEqual(1, n.length);
         assert.strictEqual('5', n[0]);
     });
+
+    it('Should convert custom object to string', function () {
+        var o = { toString: function toString() {
+                return 'abc';
+            } };
+
+        var p = gen.run(gen.str(o));
+        assert.strictEqual('abc', p);
+    });
 });
 //# sourceMappingURL=str.js.map

@@ -251,6 +251,7 @@ var seq = exports.seq = function seq() {
 };
 
 /**
+    Map function `f` over each element produced by `p`.
 */
 var map = exports.map = function map(p, f) {
     return new Generador(function () {
@@ -331,7 +332,9 @@ var map = exports.map = function map(p, f) {
     Choose from along one or more generators, each with its own custom weight.
 */
 var weightedChoice = exports.weightedChoice = function weightedChoice(weightMap) {
-    var table = walker(weightMap);
+    var table = walker(weightMap.map(function (x) {
+        return [x[0], wrap(x[1])];
+    }));
     return new Generador(function () {
         return regeneratorRuntime.mark(function _callee5(s, r) {
             var selected;
@@ -355,15 +358,24 @@ var weightedChoice = exports.weightedChoice = function weightedChoice(weightMap)
 
 /**
      Choose from along one or more generators, each with the same weight.
+     
+     @param elements Array of elements
+*/
+var choicea = exports.choicea = function choicea(elements) {
+    return weightedChoice(elements.map(function (x) {
+        return [1, x];
+    }));
+};
+
+/**
+     Choose from along one or more generators taken as arguments.
 */
 var choice = exports.choice = function choice() {
     for (var _len2 = arguments.length, elements = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
         elements[_key2] = arguments[_key2];
     }
 
-    return weightedChoice(elements.map(function (x) {
-        return [1, x];
-    }));
+    return choicea(elements);
 };
 
 /**
