@@ -5,7 +5,7 @@ const assert = require('assert');
 describe('map', () => {
 
 it('Should output same value with identity function', () => {
-    const p = gen.run(
+    const p = gen.exec(
         gen.map(gen.str(4), (x) => x));
     const n = Array.from(p);
     assert.strictEqual(1, n.length);

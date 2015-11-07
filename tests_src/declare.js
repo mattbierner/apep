@@ -9,7 +9,7 @@ it('Forward reference resolve late', () => {
     const ms = gen.declare(() => m);
     const m = gen.str('abc');
     
-    const p = gen.run(ms);
+    const p = gen.exec(ms);
     const n = Array.from(p);
     assert.strictEqual(1, n.length);
     assert.strictEqual('abc', n[0]);
@@ -17,9 +17,9 @@ it('Forward reference resolve late', () => {
 
 it('Self reference resolve to self', () => {
     const manyAs = gen.declare((self) => 
-        gen.seq(gen.lit(1), gen.map(self, (x) => x + 1));
+        gen.seq(gen.lit(1), gen.map(self, (x) => x + 1)));
     
-    const p = gen.run(manyAs);
+    const p = gen.exec(manyAs);
     assert.strictEqual(1, p.next().value);
     assert.strictEqual(2, p.next().value);
 });

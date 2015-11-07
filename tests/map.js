@@ -7,7 +7,7 @@ var assert = require('assert');
 describe('map', function () {
 
     it('Should output same value with identity function', function () {
-        var p = gen.run(gen.map(gen.str(4), function (x) {
+        var p = gen.exec(gen.map(gen.str(4), function (x) {
             return x;
         }));
         var n = Array.from(p);

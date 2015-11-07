@@ -179,16 +179,27 @@ export const choice = (...elements) =>
     weightedChoice(elements.map((x) => [1, x]));
 
 /**
+    Begin the execution of a generator.
+    
+    @param g Generator.
+    @param ud Optional user data threaded through the generator's states.
+    @param r Random number generator.
 */
-export const exec = function*(p, ud, r = Math.random) {
-    yield* execute(p, { data: ud }, r);
+export const exec = function*(g, ud, r = Math.random) {
+    for (let x of execute(g, { data: ud }, r))
+        yield x.x;
 };
 
 /**
+    Run a generator to completion, combining results into a string.
+    
+    @see exec
 */
-export const run = function*(p, ud, r = Math.random) {
-    for (let x of exec(p, ud, r))
-        yield x.x;
+export const run = function*(g, ud, r = Math.random) {
+    let out = '';
+    for (let x of exec(g, ud, r))
+        out += x;
+    return out;
 };
 
 

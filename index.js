@@ -337,90 +337,145 @@ var choice = exports.choice = function choice() {
 };
 
 /**
+    Begin the execution of a generator.
+    
+    @param g Generator.
+    @param ud Optional user data threaded through the generator's states.
+    @param r Random number generator.
 */
-var exec = exports.exec = regeneratorRuntime.mark(function exec(p, ud) {
-    var r = arguments.length <= 2 || arguments[2] === undefined ? Math.random : arguments[2];
-    return regeneratorRuntime.wrap(function exec$(_context7) {
-        while (1) switch (_context7.prev = _context7.next) {
-            case 0:
-                return _context7.delegateYield(execute(p, { data: ud }, r), 't0', 1);
-
-            case 1:
-            case 'end':
-                return _context7.stop();
-        }
-    }, exec, this);
-});
-
-/**
-*/
-var run = exports.run = regeneratorRuntime.mark(function run(p, ud) {
+var exec = exports.exec = regeneratorRuntime.mark(function exec(g, ud) {
     var r = arguments.length <= 2 || arguments[2] === undefined ? Math.random : arguments[2];
 
     var _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, x;
 
-    return regeneratorRuntime.wrap(function run$(_context8) {
-        while (1) switch (_context8.prev = _context8.next) {
+    return regeneratorRuntime.wrap(function exec$(_context7) {
+        while (1) switch (_context7.prev = _context7.next) {
             case 0:
                 _iteratorNormalCompletion2 = true;
                 _didIteratorError2 = false;
                 _iteratorError2 = undefined;
-                _context8.prev = 3;
-                _iterator2 = exec(p, ud, r)[Symbol.iterator]();
+                _context7.prev = 3;
+                _iterator2 = execute(g, { data: ud }, r)[Symbol.iterator]();
 
             case 5:
                 if (_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done) {
-                    _context8.next = 12;
+                    _context7.next = 12;
                     break;
                 }
 
                 x = _step2.value;
-                _context8.next = 9;
+                _context7.next = 9;
                 return x.x;
 
             case 9:
                 _iteratorNormalCompletion2 = true;
-                _context8.next = 5;
+                _context7.next = 5;
                 break;
 
             case 12:
-                _context8.next = 18;
+                _context7.next = 18;
                 break;
 
             case 14:
-                _context8.prev = 14;
-                _context8.t0 = _context8['catch'](3);
+                _context7.prev = 14;
+                _context7.t0 = _context7['catch'](3);
                 _didIteratorError2 = true;
-                _iteratorError2 = _context8.t0;
+                _iteratorError2 = _context7.t0;
 
             case 18:
-                _context8.prev = 18;
-                _context8.prev = 19;
+                _context7.prev = 18;
+                _context7.prev = 19;
 
                 if (!_iteratorNormalCompletion2 && _iterator2.return) {
                     _iterator2.return();
                 }
 
             case 21:
-                _context8.prev = 21;
+                _context7.prev = 21;
 
                 if (!_didIteratorError2) {
-                    _context8.next = 24;
+                    _context7.next = 24;
                     break;
                 }
 
                 throw _iteratorError2;
 
             case 24:
-                return _context8.finish(21);
+                return _context7.finish(21);
 
             case 25:
-                return _context8.finish(18);
+                return _context7.finish(18);
 
             case 26:
             case 'end':
+                return _context7.stop();
+        }
+    }, exec, this, [[3, 14, 18, 26], [19,, 21, 25]]);
+});
+
+/**
+    Run a generator to completion, combining results into a string.
+    
+    @see exec
+*/
+var run = exports.run = regeneratorRuntime.mark(function run(g, ud) {
+    var r = arguments.length <= 2 || arguments[2] === undefined ? Math.random : arguments[2];
+
+    var out, _iteratorNormalCompletion3, _didIteratorError3, _iteratorError3, _iterator3, _step3, _x3;
+
+    return regeneratorRuntime.wrap(function run$(_context8) {
+        while (1) switch (_context8.prev = _context8.next) {
+            case 0:
+                out = '';
+                _iteratorNormalCompletion3 = true;
+                _didIteratorError3 = false;
+                _iteratorError3 = undefined;
+                _context8.prev = 4;
+
+                for (_iterator3 = exec(g, ud, r)[Symbol.iterator](); !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                    _x3 = _step3.value;
+
+                    out += _x3;
+                }_context8.next = 12;
+                break;
+
+            case 8:
+                _context8.prev = 8;
+                _context8.t0 = _context8['catch'](4);
+                _didIteratorError3 = true;
+                _iteratorError3 = _context8.t0;
+
+            case 12:
+                _context8.prev = 12;
+                _context8.prev = 13;
+
+                if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                    _iterator3.return();
+                }
+
+            case 15:
+                _context8.prev = 15;
+
+                if (!_didIteratorError3) {
+                    _context8.next = 18;
+                    break;
+                }
+
+                throw _iteratorError3;
+
+            case 18:
+                return _context8.finish(15);
+
+            case 19:
+                return _context8.finish(12);
+
+            case 20:
+                return _context8.abrupt('return', out);
+
+            case 21:
+            case 'end':
                 return _context8.stop();
         }
-    }, run, this, [[3, 14, 18, 26], [19,, 21, 25]]);
+    }, run, this, [[4, 8, 12, 20], [13,, 15, 19]]);
 });
 //# sourceMappingURL=index.js.map

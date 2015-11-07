@@ -13,7 +13,7 @@ describe('declare', function () {
         });
         var m = gen.str('abc');
 
-        var p = gen.run(ms);
+        var p = gen.exec(ms);
         var n = Array.from(p);
         assert.strictEqual(1, n.length);
         assert.strictEqual('abc', n[0]);
@@ -21,12 +21,14 @@ describe('declare', function () {
 
     it('Self reference resolve to self', function () {
         var manyAs = gen.declare(function (self) {
-            return gen.seq(gen.lit('abc'), self);
+            return gen.seq(gen.lit(1), gen.map(self, function (x) {
+                return x + 1;
+            }));
         });
 
-        var p = gen.run(manyAs);
-        assert.strictEqual('abc', p.next().value);
-        assert.strictEqual('abc', p.next().value);
+        var p = gen.exec(manyAs);
+        assert.strictEqual(1, p.next().value);
+        assert.strictEqual(2, p.next().value);
     });
 });
 //# sourceMappingURL=declare.js.map
