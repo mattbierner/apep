@@ -24,10 +24,37 @@ const Generador = function(run) {
 };
 
 /**
+    Internal state object.
+*/
+const State = (vars, ud) => ({
+    'vars': vars,
+    'ud': ud
+});
+
+State.empty = State({}, null);
+
+State.setUd = (s, ud) =>
+    State(s.vars, ud);
+
+State.setVars = (s, vars) =>
+    State(vars, s.ud);
+
+State.getVar = (s, name, def) =>
+    s.vars.hasOwnProperty(name)
+        ? s.vars[name]
+        : def;
+
+State.setVar = (s, name, value) => {
+    const newVars = Object.create(s.vars);
+    newVars[name] = value;
+    return State.setVars(s, newVars);
+};
+
+/**
     Run a given generator.
 */
 export const execute = function*(p, s, r) {
-    return yield* (p.run())(s, r);
+    return yield* p.run()(s, r);
 };
 
 /**
@@ -186,7 +213,7 @@ export const choice = (...elements) =>
     @param r Random number generator.
 */
 export const exec = function*(g, ud, r = Math.random) {
-    for (let x of execute(g, { data: ud }, r))
+    for (let x of execute(g, State.setUd(State.empty, ud), r))
         yield x.x;
 };
 
@@ -201,7 +228,3 @@ export const run = function*(g, ud, r = Math.random) {
         out += x;
     return out;
 };
-
-
-    
- 

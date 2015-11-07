@@ -32,6 +32,36 @@ var Generador = function Generador(run) {
 };
 
 /**
+    Internal state object.
+*/
+var State = function State(vars, ud) {
+    return {
+        'vars': vars,
+        'ud': ud
+    };
+};
+
+State.empty = State({}, null);
+
+State.setUd = function (s, ud) {
+    return State(s.vars, ud);
+};
+
+State.setVars = function (s, vars) {
+    return State(vars, s.ud);
+};
+
+State.getVar = function (s, name, def) {
+    return s.vars.hasOwnProperty(name) ? s.vars[name] : def;
+};
+
+State.setVar = function (s, name, value) {
+    var newVars = Object.create(s.vars);
+    newVars[name] = value;
+    return State.setVars(s, newVars);
+};
+
+/**
     Run a given generator.
 */
 var execute = exports.execute = regeneratorRuntime.mark(function execute(p, s, r) {
@@ -355,7 +385,7 @@ var exec = exports.exec = regeneratorRuntime.mark(function exec(g, ud) {
                 _didIteratorError2 = false;
                 _iteratorError2 = undefined;
                 _context7.prev = 3;
-                _iterator2 = execute(g, { data: ud }, r)[Symbol.iterator]();
+                _iterator2 = execute(g, State.setUd(State.empty, ud), r)[Symbol.iterator]();
 
             case 5:
                 if (_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done) {
