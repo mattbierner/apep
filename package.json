@@ -28,7 +28,9 @@
         "index.js",
         "test.js"
     ],
-    "dependencies": { },
+    "dependencies": {
+        "walker-sample": "^0.0.0"    
+    },
     "devDependencies": {
         "babel-polyfill": "^6.0.16",
         "babel-preset-es2015": "^6.1.0",

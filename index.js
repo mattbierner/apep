@@ -3,52 +3,16 @@
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+/**
+    APEN
+    
+    Dada engine inspired library.
+*/
 require("babel-polyfill");
+var walker = require('walker-sample');
 
 var randomInt = function randomInt(min, max, r) {
     return Math.floor(r() * (max - min)) + min;
-};
-
-/**
-    Walker's alias method for random objects with different probabilities.
-    http://code.activestate.com/recipes/576564-walkers-alias-method-for-random-objects-with-diffe/
-*/
-var buildWalkerTable = exports.random = function (weightMap) {
-    var n = weightMap.length;
-    var sum = weightMap.reduce(function (p, c) {
-        return p + c[0];
-    }, 0);
-    var weights = weightMap.map(function (x) {
-        return x[0] * n / sum;
-    });
-
-    var shorts = weights.filter(function (x) {
-        return x < 1;
-    });
-    var longs = weights.filter(function (x) {
-        return x > 1;
-    });
-    var inx = Array.from(Array(n)).map(function (_) {
-        return -1;
-    });
-    while (shorts.length && longs.length) {
-        var j = shorts.pop();
-        var k = longs[longs.length - 1];
-        inx[j] = k;
-        weights[k] -= 1 - weights[j];
-        if (weights[k] < 1) {
-            shorts.push(k);
-            longs.pop();
-        }
-    }
-
-    return function (r) {
-        var u = r();
-        var j = randomInt(0, n, r);
-        var k = u <= weights[j] ? j : inx[j];
-        console.log(k, weightMap[k]);
-        return weightMap[k][1];
-    };
 };
 
 /**
@@ -63,11 +27,18 @@ var Pair = function Pair(x, s) {
 
 /**
 */
+var Generador = function Generador(run) {
+    this.run = run;
+};
+
+/**
+    Run a given generator.
+*/
 var execute = exports.execute = regeneratorRuntime.mark(function execute(p, s, r) {
     return regeneratorRuntime.wrap(function execute$(_context) {
         while (1) switch (_context.prev = _context.next) {
             case 0:
-                return _context.delegateYield(p()(s, r), 't0', 1);
+                return _context.delegateYield(p.run()(s, r), 't0', 1);
 
             case 1:
                 return _context.abrupt('return', _context.t0);
@@ -80,34 +51,85 @@ var execute = exports.execute = regeneratorRuntime.mark(function execute(p, s, r
 });
 
 /**
-    Declare a generator for self reference or for forward references.
-    
+    Declare a generator for self reference or late bindings.
+        
     @param def Function that takes a reference to generator being defined and
         returns the generator's definition.
+        
+    Anonymous self reference:
+    
+        gen.declare((self) =>
+            gen.seq(m, self));
+            
+    Use of forward declarations:
+    
+        // Use `m` before it is declared or defined.
+        const ms = gen.declare(() =>
+            gen.seq(m, self));
+            
+        const m = gen.lit('n');
+    
+    Later declaration: 
+    
+        // Declare that the some generator `ms` will exist.
+        let ms = gen.declare(() => ms);
+        
+        // Use `ms` in any expression.
+        const p = gen.seq('a', ms);
+        
+        ...
+        
+        // Actually define `ms` sometime later.
+        ms = gen.str('abc');
+
+    Also can be used to introduce simple, scoped state:
+        
+        const counter = gen.declare(() => {
+            // declare some variables local to this block.
+            let sum = 0;
+
+            return gen.seq(
+                gen.seq(gen.str(1), gen.str(2), gen.str(3))
+                    .map(x => {
+                        // Update the state in an expression.
+                        sum += i;
+                        return x;
+                    }),
+                // and use the state sometime later.
+                // Declare is used to make sure the current value of `i` is
+                // always returned.
+                gen.declare(() => gen.lit(i)));
+        });
+            
+    For performance reasons, use declare around the smallest possible generator
+    since declare evaluates it's body every time the generator is invoked. 
 */
 var declare = exports.declare = function declare(def) {
-    return regeneratorRuntime.mark(function self(s, r) {
-        return regeneratorRuntime.wrap(function self$(_context2) {
-            while (1) switch (_context2.prev = _context2.next) {
-                case 0:
-                    return _context2.delegateYield(execute(def(self), s, r), 't0', 1);
+    var self = undefined;
+    return self = new Generador(function () {
+        return regeneratorRuntime.mark(function _callee(s, r) {
+            return regeneratorRuntime.wrap(function _callee$(_context2) {
+                while (1) switch (_context2.prev = _context2.next) {
+                    case 0:
+                        return _context2.delegateYield(execute(def(self), s, r), 't0', 1);
 
-                case 1:
-                case 'end':
-                    return _context2.stop();
-            }
-        }, self, this);
+                    case 1:
+                    case 'end':
+                        return _context2.stop();
+                }
+            }, _callee, this);
+        });
     });
 };
 
 /**
-    Generate a literal value without any transformations applied
+    Generate a literal value without any transformations applied.
 */
 var lit = exports.lit = function lit(x) {
-    return function () {
-        return regeneratorRuntime.mark(function _callee(s, _) {
+    return new Generador(function () {
+        return regeneratorRuntime.mark(function _callee2(s, _) {
             var v;
-            return regeneratorRuntime.wrap(function _callee$(_context3) {
+            return regeneratorRuntime.wrap(function _callee2$(_context3) {
                 while (1) switch (_context3.prev = _context3.next) {
                     case 0:
                         v = Pair(x, s);
@@ -121,17 +143,23 @@ var lit = exports.lit = function lit(x) {
                     case 'end':
                         return _context3.stop();
                 }
-            }, _callee, this);
+            }, _callee2, this);
         });
-    };
+    });
 };
 
 /**
-    Generate a literal string value. Attempts to convert the input value to 
-    a string.
+    Generate an empty value.
+*/
+var empty = exports.empty = lit('');
+
+/**
+    Generate a literal string value.
+    
+    Attempts to convert the input value to a string.
 */
 var str = exports.str = function str(x) {
-    return lit('' + (arguments.length === 0 ? '' : x));
+    return arguments.length === 0 ? empty : lit('' + x);
 };
 
 /**
@@ -140,19 +168,20 @@ var str = exports.str = function str(x) {
     Convert any literals into string literals.
 */
 var wrap = exports.wrap = function wrap(x) {
-    return typeof x === 'function' ? x : str(x);
+    return x instanceof Generador ? x : str(x);
 };
 
 /**
+    Run `a` and then `run b`.
 */
 var next = exports.next = function next(a, b) {
     a = wrap(a);
     b = wrap(b);
-    return function () {
-        return regeneratorRuntime.mark(function _callee2(s1, r) {
+    return new Generador(function () {
+        return regeneratorRuntime.mark(function _callee3(s1, r) {
             var _ref, s;
 
-            return regeneratorRuntime.wrap(function _callee2$(_context4) {
+            return regeneratorRuntime.wrap(function _callee3$(_context4) {
                 while (1) switch (_context4.prev = _context4.next) {
                     case 0:
                         return _context4.delegateYield(execute(a, s1, r), 't0', 1);
@@ -169,19 +198,24 @@ var next = exports.next = function next(a, b) {
                     case 'end':
                         return _context4.stop();
                 }
-            }, _callee2, this);
+            }, _callee3, this);
         });
-    };
+    });
 };
 
 /**
+    Run a sequence of generators left to right.
+    
+    Literal values are wrapped and converted to strings:
+    
+        gen.seq('a', g1, 3) === gen.seq(gen.str('a'), g1, gen.str(3))
 */
 var seq = exports.seq = function seq() {
     for (var _len = arguments.length, elements = Array(_len), _key = 0; _key < _len; _key++) {
         elements[_key] = arguments[_key];
     }
 
-    return elements.map(wrap).reduceRight(function (p, c) {
+    return elements.reduceRight(function (p, c) {
         return next(c, p);
     });
 };
@@ -189,11 +223,11 @@ var seq = exports.seq = function seq() {
 /**
 */
 var map = exports.map = function map(p, f) {
-    return function () {
-        return regeneratorRuntime.mark(function _callee3(s1, r) {
+    return new Generador(function () {
+        return regeneratorRuntime.mark(function _callee4(s1, r) {
             var s, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, v;
 
-            return regeneratorRuntime.wrap(function _callee3$(_context5) {
+            return regeneratorRuntime.wrap(function _callee4$(_context5) {
                 while (1) switch (_context5.prev = _context5.next) {
                     case 0:
                         s = s1;
@@ -258,23 +292,23 @@ var map = exports.map = function map(p, f) {
                     case 'end':
                         return _context5.stop();
                 }
-            }, _callee3, this, [[4, 16, 20, 28], [21,, 23, 27]]);
+            }, _callee4, this, [[4, 16, 20, 28], [21,, 23, 27]]);
         });
-    };
+    });
 };
 
 /**
     Choose from along one or more generators, each with its own custom weight.
 */
 var weightedChoice = exports.weightedChoice = function weightedChoice(weightMap) {
-    var walker = buildWalkerTable(weightMap);
-    return function () {
-        return regeneratorRuntime.mark(function _callee4(s, r) {
+    var table = walker(weightMap);
+    return new Generador(function () {
+        return regeneratorRuntime.mark(function _callee5(s, r) {
             var selected;
-            return regeneratorRuntime.wrap(function _callee4$(_context6) {
+            return regeneratorRuntime.wrap(function _callee5$(_context6) {
                 while (1) switch (_context6.prev = _context6.next) {
                     case 0:
-                        selected = walker(r);
+                        selected = table(r);
                         return _context6.delegateYield(execute(selected, s, r), 't0', 2);
 
                     case 2:
@@ -284,9 +318,9 @@ var weightedChoice = exports.weightedChoice = function weightedChoice(weightMap)
                     case 'end':
                         return _context6.stop();
                 }
-            }, _callee4, this);
+            }, _callee5, this);
         });
-    };
+    });
 };
 
 /**
@@ -297,7 +331,7 @@ var choice = exports.choice = function choice() {
         elements[_key2] = arguments[_key2];
     }
 
-    return weightedChoice(elements.map(function (x, i) {
+    return weightedChoice(elements.map(function (x) {
         return [1, x];
     }));
 };
