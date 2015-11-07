@@ -218,13 +218,23 @@ export const exec = function*(g, ud, r = Math.random) {
 };
 
 /**
+    Left fold over a generator.
+    
+    @param f Function taking accumulated value and current value.
+    @param z Initial value.
+    @param g Generator.
+    @param ud Optional user data threaded through the generator's states.
+    @param r Random number generator.
+*/
+export const fold = (f, z, g, ud, r = Math.random) => {
+    for (const x of exec(g, ud, r))
+        z = f(z, x);
+    return z;
+};
+
+/**
     Run a generator to completion, combining results into a string.
     
     @see exec
 */
-export const run = function*(g, ud, r = Math.random) {
-    let out = '';
-    for (let x of exec(g, ud, r))
-        out += x;
-    return out;
-};
+export const run = fold.bind(null, (p, c) => p + c, '');

@@ -444,68 +444,50 @@ var exec = exports.exec = regeneratorRuntime.mark(function exec(g, ud) {
 });
 
 /**
+    Left fold over a generator.
+    
+    @param f Function taking accumulated value and current value.
+    @param z Initial value.
+    @param g Generator.
+    @param ud Optional user data threaded through the generator's states.
+    @param r Random number generator.
+*/
+var fold = exports.fold = function fold(f, z, g, ud) {
+    var r = arguments.length <= 4 || arguments[4] === undefined ? Math.random : arguments[4];
+    var _iteratorNormalCompletion3 = true;
+    var _didIteratorError3 = false;
+    var _iteratorError3 = undefined;
+
+    try {
+        for (var _iterator3 = exec(g, ud, r)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            var x = _step3.value;
+
+            z = f(z, x);
+        }
+    } catch (err) {
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                _iterator3.return();
+            }
+        } finally {
+            if (_didIteratorError3) {
+                throw _iteratorError3;
+            }
+        }
+    }
+
+    return z;
+};
+
+/**
     Run a generator to completion, combining results into a string.
     
     @see exec
 */
-var run = exports.run = regeneratorRuntime.mark(function run(g, ud) {
-    var r = arguments.length <= 2 || arguments[2] === undefined ? Math.random : arguments[2];
-
-    var out, _iteratorNormalCompletion3, _didIteratorError3, _iteratorError3, _iterator3, _step3, _x3;
-
-    return regeneratorRuntime.wrap(function run$(_context8) {
-        while (1) switch (_context8.prev = _context8.next) {
-            case 0:
-                out = '';
-                _iteratorNormalCompletion3 = true;
-                _didIteratorError3 = false;
-                _iteratorError3 = undefined;
-                _context8.prev = 4;
-
-                for (_iterator3 = exec(g, ud, r)[Symbol.iterator](); !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-                    _x3 = _step3.value;
-
-                    out += _x3;
-                }_context8.next = 12;
-                break;
-
-            case 8:
-                _context8.prev = 8;
-                _context8.t0 = _context8['catch'](4);
-                _didIteratorError3 = true;
-                _iteratorError3 = _context8.t0;
-
-            case 12:
-                _context8.prev = 12;
-                _context8.prev = 13;
-
-                if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                    _iterator3.return();
-                }
-
-            case 15:
-                _context8.prev = 15;
-
-                if (!_didIteratorError3) {
-                    _context8.next = 18;
-                    break;
-                }
-
-                throw _iteratorError3;
-
-            case 18:
-                return _context8.finish(15);
-
-            case 19:
-                return _context8.finish(12);
-
-            case 20:
-                return _context8.abrupt('return', out);
-
-            case 21:
-            case 'end':
-                return _context8.stop();
-        }
-    }, run, this, [[4, 8, 12, 20], [13,, 15, 19]]);
-});
+var run = exports.run = fold.bind(null, function (p, c) {
+    return p + c;
+}, '');
 //# sourceMappingURL=index.js.map
