@@ -2,16 +2,13 @@
 const pep = require('../index');
 const assert = require('assert');
 
-describe('map', () => {
+describe('chain', () => {
 
-    it('Should output same value with identity function', () => {
-        const p = pep.exec(
-            pep.map(pep.str(4), (x) =>  x));
-        const n = Array.from(p);
-        assert.strictEqual(1, n.length);
-        assert.strictEqual('4', n[0]);
+    it('Should pass single result value to function', () => {
+        const p = pep.run(
+            pep.chain(pep.lit(4), x => pep.str(x * 2)));
+        assert.strictEqual('8', p);
     });
-
 
     it('Should map over every element in a sequence', () => {
         const p = pep.exec(

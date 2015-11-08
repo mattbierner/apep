@@ -223,14 +223,41 @@ var seq = exports.seq = function seq() {
 /**
     Map function `f` over each element produced by `p`.
 */
-var map = exports.map = function map(p, f) {
+var chain = exports.chain = function chain(p, f) {
     return new Generador(function (s) {
-        return (function loop(r) {
-            if (r && r.rest) return Yield(Pair(f(r.first.x), r.first.s), function () {
-                return loop(r.rest());
-            });
-            return r;
+        return (function loop(r, k) {
+            if (r && r.rest) {
+                var _ret = (function () {
+                    var r2 = execute(f(r.first.x), r.first.s);
+                    if (r2 && r2.rest) {
+                        return {
+                            v: Yield(r2.first, function () {
+                                return loop(r2.rest(), function () {
+                                    return loop(r.rest(), k);
+                                });
+                            })
+                        };
+                    }
+                    return {
+                        v: loop(r2, function () {
+                            return loop(r.rest());
+                        })
+                    };
+                })();
+
+                if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+            }
+            return k ? k() : r;
         })(execute(p, s));
+    });
+};
+
+/**
+    Map function `f` over each element produced by `p`.
+*/
+var map = exports.map = function map(p, f) {
+    return chain(p, function (x) {
+        return lit(f(x));
     });
 };
 
@@ -299,7 +326,7 @@ var many = exports.many = function many(g) {
         };
     }
     if (prob === 0) return empty;else if (prob === 1) {
-        var _ret = (function () {
+        var _ret2 = (function () {
             var self = undefined;
             return {
                 v: self = seq(g, declare(function () {
@@ -308,7 +335,7 @@ var many = exports.many = function many(g) {
             };
         })();
 
-        if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+        if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
     }
     var self = undefined;
     return self = weightedChoice([[prob, seq(g, declare(function () {
