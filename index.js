@@ -70,8 +70,8 @@ State.setVar = function (s, name, value) {
 /**
     Run a given generator.
 */
-var execute = exports.execute = function execute(p, s, k) {
-    return p.run(s, k);
+var execute = exports.execute = function execute(p, s) {
+    return p.run(s);
 };
 
 /**
@@ -130,28 +130,34 @@ var execute = exports.execute = function execute(p, s, k) {
 */
 var declare = exports.declare = function declare(def) {
     var self = undefined;
-    return self = new Generador(function (s, k) {
-        return execute(def(self), s, k);
+    return self = new Generador(function (s) {
+        return execute(def(self), s);
     });
 };
 
 var Yield = function Yield(first, rest) {
     return {
-        'first': first,
-        'rest': rest,
+        first: first,
+        rest: rest,
         '_yield': true
     };
 };
 
-var Done = {};
+var Done = function Done(first) {
+    return {
+        'first': first,
+        'rest': null,
+        '_yield': true
+    };
+};
 
 /**
     Generate a literal value without any transformations applied.
 */
 var lit = exports.lit = function lit(x) {
-    return new Generador(function (s, k) {
+    return new Generador(function (s) {
         return Yield(Pair(x, s), function (_) {
-            return k(x, s);
+            return Done(s);
         });
     });
 };
@@ -159,9 +165,7 @@ var lit = exports.lit = function lit(x) {
 /**
     Empty value generator.
 */
-var empty = exports.empty = new Generador(function (_) {
-    return Done;
-});
+var empty = exports.empty = new Generador(Done);
 
 /**
     Generate a literal string value.
@@ -184,23 +188,18 @@ var wrap = exports.wrap = function wrap(x) {
 /**
     Run `a` and then `run b`.
 */
-var chain = exports.chain = function chain(a, f) {
-    a = wrap(a);
-    return new Generador(function (s, k) {
-        return execute(a, s, function (x, s) {
-            return execute(wrap(f(x)), s, k);
-        });
-    });
-};
-
-/**
-    Run `a` and then `run b`.
-*/
 var next = exports.next = function next(a, b) {
     a = wrap(a);
     b = wrap(b);
-    return chain(a, function (_) {
-        return b;
+    var loop = function loop(r) {
+        if (r && r.rest) return Yield(r.first, function () {
+            return loop(r.rest());
+        });
+        return execute(b, r.first);
+    };
+
+    return new Generador(function (s) {
+        return loop(execute(a, s));
     });
 };
 
@@ -225,18 +224,13 @@ var seq = exports.seq = function seq() {
     Map function `f` over each element produced by `p`.
 */
 var map = exports.map = function map(p, f) {
-    return new Generador(function (s1, k) {
-        // let done;
-        var r = execute(p, s1, function (x2, s2) {
-            //done = true;
-            return k(f(x2), s2);
-        });
+    return new Generador(function (s) {
         return (function loop(r) {
-            if (r && r._yield) return Yield(Pair(f(r.first.x), r.first.s), function () {
+            if (r && r.rest) return Yield(Pair(f(r.first.x), r.first.s), function () {
                 return loop(r.rest());
             });
             return r;
-        })(r);
+        })(execute(p, s));
     });
 };
 
@@ -249,9 +243,8 @@ var weightedChoice = exports.weightedChoice = function weightedChoice(weightMap)
     var table = walker(arrayMap(weightMap, function (x) {
         return [x[0], wrap(x[1])];
     }));
-    return new Generador(function (s, k) {
-        var selected = table(s.random);
-        return execute(selected, s, k);
+    return new Generador(function (s) {
+        return execute(table(s.random), s);
     });
 };
 
@@ -355,11 +348,11 @@ var exec = exports.exec = regeneratorRuntime.mark(function exec(g, ud) {
 
             case 2:
                 if (!true) {
-                    _context.next = 14;
+                    _context.next = 10;
                     break;
                 }
 
-                if (!(r === Done)) {
+                if (!(!r._yield || !r.rest)) {
                     _context.next = 5;
                     break;
                 }
@@ -367,31 +360,15 @@ var exec = exports.exec = regeneratorRuntime.mark(function exec(g, ud) {
                 return _context.abrupt('return');
 
             case 5:
-                if (r._yield) {
-                    _context.next = 7;
-                    break;
-                }
-
-                return _context.abrupt('return');
-
-            case 7:
-                _context.next = 9;
+                _context.next = 7;
                 return r.first.x;
 
-            case 9:
-                if (r.rest) {
-                    _context.next = 11;
-                    break;
-                }
-
-                return _context.abrupt('break', 14);
-
-            case 11:
+            case 7:
                 r = r.rest();
                 _context.next = 2;
                 break;
 
-            case 14:
+            case 10:
             case 'end':
                 return _context.stop();
         }

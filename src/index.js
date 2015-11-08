@@ -57,8 +57,8 @@ State.setVar = (s, name, value) => {
 /**
     Run a given generator.
 */
-export const execute = (p, s, k) => {
-    return p.run(s, k);
+export const execute = (p, s) => {
+    return p.run(s);
 };
 
 /**
@@ -117,29 +117,33 @@ export const execute = (p, s, k) => {
 */
 export const declare = (def) => {
     let self;
-    return self = new Generador((s, k) =>
-        execute(def(self), s, k));
+    return self = new Generador(s =>
+        execute(def(self), s));
 };
 
 const Yield = (first, rest) => ({
-    'first': first,
-    'rest': rest,
+    first: first,
+    rest: rest,
     '_yield': true
 });
 
-const Done = {};
+const Done = (first) => ({
+    'first': first,
+    'rest': null,
+    '_yield': true
+});
 
 /**
     Generate a literal value without any transformations applied.
 */
 export const lit = (x) =>
-    new Generador((s, k) =>
-        Yield(Pair(x, s), _ => k(x, s))) 
+    new Generador((s) =>
+        Yield(Pair(x, s), _ => Done(s)))
  
 /**
     Empty value generator.
 */
-export const empty = new Generador(_ => Done);
+export const empty = new Generador(Done);
 
 /**
     Generate a literal string value.
@@ -161,20 +165,17 @@ export const wrap = (x) =>
 /**
     Run `a` and then `run b`.
 */
-export const chain = (a, f) => {
-    a = wrap(a);
-    return new Generador((s, k) =>
-        execute(a, s, (x, s) =>
-            execute(wrap(f(x)), s, k)));
-};
-
-/**
-    Run `a` and then `run b`.
-*/
 export const next = (a, b) => {
     a = wrap(a);
     b = wrap(b);
-    return chain(a, _ => b);
+    const loop = (r) => {
+        if (r && r.rest)
+            return Yield(r.first, () => loop(r.rest()));
+        return execute(b, r.first);
+    };
+
+    return new Generador(s =>
+        loop(execute(a, s)));
 };
 
 /**
@@ -191,20 +192,14 @@ export const seq = (...elements) =>
     Map function `f` over each element produced by `p`.
 */
 export const map = (p, f) =>
-    new Generador((s1, k) => {
-       // let done;
-        let r = execute(p, s1, (x2, s2) => {
-            //done = true;
-            return k(f(x2), s2);
-        });
-        return (function loop(r) {
-            if (r && r._yield)
+    new Generador(s =>
+        (function loop(r) {
+            if (r && r.rest)
                 return Yield(
                     Pair(f(r.first.x), r.first.s),
                     () => loop(r.rest()));
             return r;
-        })(r);
-    });
+        })(execute(p, s)));
         
 /* Choice
  ******************************************************************************/
@@ -213,10 +208,8 @@ export const map = (p, f) =>
 */
 export const weightedChoice = (weightMap) => {
     const table = walker(arrayMap(weightMap, x => [x[0], wrap(x[1])]));
-    return new Generador((s, k) => {
-        const selected = table(s.random);
-        return execute(selected, s, k);
-    });
+    return new Generador(s =>
+        execute(table(s.random), s));
 }; 
 
 /**
@@ -292,13 +285,9 @@ export const exec = function*(g, ud, random = Math.random) {
     var state = State.setRandom(State.setUd(State.empty, ud), random);
     let r = execute(g, state, (x, s) => (x));    
     while (true) { 
-        if (r === Done)
-            return;
-        if (!r._yield)
+        if (!r._yield || !r.rest)
             return;
         yield r.first.x;
-        if (!r.rest)
-            break; 
         r = r.rest();
     }
 };

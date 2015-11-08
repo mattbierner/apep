@@ -20,5 +20,16 @@ describe('map', () => {
         const n = Array.from(p);
         assert.deepEqual([1, 4, 9], n);
     });
-
+    
+    it('Should map over every element in a sequence without leaking', () => {
+        const p = gen.exec(
+            gen.seq(
+                gen.lit(5),
+                gen.map(
+                    gen.seq(gen.lit(1), gen.lit(2), gen.lit(3)),
+                    (x) => x * x),
+                gen.lit(4)));
+        const n = Array.from(p);
+        assert.deepEqual([5, 1, 4, 9, 4], n);
+    });
 });
