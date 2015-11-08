@@ -1,5 +1,5 @@
 <div align="center" >
-    <img src="" alt="Apep" />
+    <img src="https://raw.githubusercontent.com/mattbierner/apep/master/documentation/apep.png" alt="Apep" />
 </div>
 
 Apep is a Javascript text generation library influenced by the [Dada Engine][dada].
@@ -51,23 +51,17 @@ ACK! The internet is doxxed!
 Apep provides a small set of combinators, from which fairly complex grammers can be constructed. All grammers are specified directly in Javascript.
 
 ### Links
-* [Documentation][documentation]
-
-
-# Usage
-
-
 ```
 $ npm install apep
 ```
 
-[documentation]: https://github.com/mattbierner/bennu/wiki
-[CombinatorialParsers]: http://en.wikipedia.org/wiki/Parser_combinator
-[Parsatron]: https://github.com/youngnh/parsatron
-[Parsec]: http://legacy.cs.uu.nl/daan/parsec.html
-[parse-ecma]: https://github.com/mattbierner/parse-ecma
-[parse-re]: https://github.com/mattbierner/parse-re
-[parse-pn]: https://github.com/mattbierner/parse-pn
-[parse-ecma-incremental]: https://github.com/mattbierner/parse-ecma-incremental
-[khepri]: https://github.com/mattbierner/khepri
-[seshet]: https://github.com/mattbierner/seshet
+* [Documentation][documentation]
+
+
+
+### Contributing
+
+
+
+[documentation]: https://github.com/mattbierner/apep/wiki
+[dada]: http://dev.null.org/dadaengine/
