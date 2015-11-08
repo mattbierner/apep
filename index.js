@@ -3,6 +3,9 @@
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+
+function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.constructor === Symbol ? "symbol" : typeof obj; }
+
 /**
     APEN
     
@@ -32,21 +35,26 @@ var Generador = function Generador(run) {
 /**
     Internal state object.
 */
-var State = function State(vars, ud) {
+var State = function State(random, vars, ud) {
     return {
+        'random': random,
         'vars': vars,
         'ud': ud
     };
 };
 
-State.empty = State({}, null);
+State.empty = State(Math.random, {}, null);
 
 State.setUd = function (s, ud) {
-    return State(s.vars, ud);
+    return State(s.random, s.vars, ud);
 };
 
 State.setVars = function (s, vars) {
-    return State(vars, s.ud);
+    return State(s.random, vars, s.ud);
+};
+
+State.setRandom = function (s, random) {
+    return State(random, s.vars, s.ud);
 };
 
 State.getVar = function (s, name, def) {
@@ -62,21 +70,9 @@ State.setVar = function (s, name, value) {
 /**
     Run a given generator.
 */
-var execute = exports.execute = regeneratorRuntime.mark(function execute(p, s, r) {
-    return regeneratorRuntime.wrap(function execute$(_context) {
-        while (1) switch (_context.prev = _context.next) {
-            case 0:
-                return _context.delegateYield(p.run()(s, r), 't0', 1);
-
-            case 1:
-                return _context.abrupt('return', _context.t0);
-
-            case 2:
-            case 'end':
-                return _context.stop();
-        }
-    }, execute, this);
-});
+var execute = exports.execute = function execute(p, s, k) {
+    return p.run(s, k);
+};
 
 /**
     Declare a generator for self reference or late bindings.
@@ -134,55 +130,38 @@ var execute = exports.execute = regeneratorRuntime.mark(function execute(p, s, r
 */
 var declare = exports.declare = function declare(def) {
     var self = undefined;
-    return self = new Generador(function () {
-        return regeneratorRuntime.mark(function _callee(s, r) {
-            return regeneratorRuntime.wrap(function _callee$(_context2) {
-                while (1) switch (_context2.prev = _context2.next) {
-                    case 0:
-                        return _context2.delegateYield(execute(def(self), s, r), 't0', 1);
-
-                    case 1:
-                        return _context2.abrupt('return', _context2.t0);
-
-                    case 2:
-                    case 'end':
-                        return _context2.stop();
-                }
-            }, _callee, this);
-        });
+    return self = new Generador(function (s, k) {
+        return execute(def(self), s, k);
     });
 };
+
+var Yield = function Yield(first, rest) {
+    return {
+        'first': first,
+        'rest': rest,
+        '_yield': true
+    };
+};
+
+var Done = {};
 
 /**
     Generate a literal value without any transformations applied.
 */
 var lit = exports.lit = function lit(x) {
-    return new Generador(function () {
-        return regeneratorRuntime.mark(function _callee2(s, _) {
-            var v;
-            return regeneratorRuntime.wrap(function _callee2$(_context3) {
-                while (1) switch (_context3.prev = _context3.next) {
-                    case 0:
-                        v = Pair(x, s);
-                        _context3.next = 3;
-                        return v;
-
-                    case 3:
-                        return _context3.abrupt('return', v);
-
-                    case 4:
-                    case 'end':
-                        return _context3.stop();
-                }
-            }, _callee2, this);
+    return new Generador(function (s, k) {
+        return Yield(Pair(x, s), function (_) {
+            return k(x, s);
         });
     });
 };
 
 /**
-    Generate an empty value.
+    Empty value generator.
 */
-var empty = exports.empty = lit('');
+var empty = exports.empty = new Generador(function (_) {
+    return Done;
+});
 
 /**
     Generate a literal string value.
@@ -190,7 +169,7 @@ var empty = exports.empty = lit('');
     Attempts to convert the input value to a string.
 */
 var str = exports.str = function str(x) {
-    return arguments.length === 0 ? empty : lit('' + x);
+    return arguments.length === 0 ? lit('') : lit('' + x);
 };
 
 /**
@@ -205,32 +184,23 @@ var wrap = exports.wrap = function wrap(x) {
 /**
     Run `a` and then `run b`.
 */
+var chain = exports.chain = function chain(a, f) {
+    a = wrap(a);
+    return new Generador(function (s, k) {
+        return execute(a, s, function (x, s) {
+            return execute(wrap(f(x)), s, k);
+        });
+    });
+};
+
+/**
+    Run `a` and then `run b`.
+*/
 var next = exports.next = function next(a, b) {
     a = wrap(a);
     b = wrap(b);
-    return new Generador(function () {
-        return regeneratorRuntime.mark(function _callee3(s1, r) {
-            var _ref, s;
-
-            return regeneratorRuntime.wrap(function _callee3$(_context4) {
-                while (1) switch (_context4.prev = _context4.next) {
-                    case 0:
-                        return _context4.delegateYield(execute(a, s1, r), 't0', 1);
-
-                    case 1:
-                        _ref = _context4.t0;
-                        s = _ref.s;
-                        return _context4.delegateYield(execute(b, s, r), 't1', 4);
-
-                    case 4:
-                        return _context4.abrupt('return', _context4.t1);
-
-                    case 5:
-                    case 'end':
-                        return _context4.stop();
-                }
-            }, _callee3, this);
-        });
+    return chain(a, function (_) {
+        return b;
     });
 };
 
@@ -255,77 +225,18 @@ var seq = exports.seq = function seq() {
     Map function `f` over each element produced by `p`.
 */
 var map = exports.map = function map(p, f) {
-    return new Generador(function () {
-        return regeneratorRuntime.mark(function _callee4(s1, r) {
-            var s, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, v;
-
-            return regeneratorRuntime.wrap(function _callee4$(_context5) {
-                while (1) switch (_context5.prev = _context5.next) {
-                    case 0:
-                        s = s1;
-                        _iteratorNormalCompletion = true;
-                        _didIteratorError = false;
-                        _iteratorError = undefined;
-                        _context5.prev = 4;
-                        _iterator = execute(p, s, r)[Symbol.iterator]();
-
-                    case 6:
-                        if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
-                            _context5.next = 14;
-                            break;
-                        }
-
-                        v = _step.value;
-
-                        s = v.s;
-                        _context5.next = 11;
-                        return Pair(f(v.x), s);
-
-                    case 11:
-                        _iteratorNormalCompletion = true;
-                        _context5.next = 6;
-                        break;
-
-                    case 14:
-                        _context5.next = 20;
-                        break;
-
-                    case 16:
-                        _context5.prev = 16;
-                        _context5.t0 = _context5['catch'](4);
-                        _didIteratorError = true;
-                        _iteratorError = _context5.t0;
-
-                    case 20:
-                        _context5.prev = 20;
-                        _context5.prev = 21;
-
-                        if (!_iteratorNormalCompletion && _iterator.return) {
-                            _iterator.return();
-                        }
-
-                    case 23:
-                        _context5.prev = 23;
-
-                        if (!_didIteratorError) {
-                            _context5.next = 26;
-                            break;
-                        }
-
-                        throw _iteratorError;
-
-                    case 26:
-                        return _context5.finish(23);
-
-                    case 27:
-                        return _context5.finish(20);
-
-                    case 28:
-                    case 'end':
-                        return _context5.stop();
-                }
-            }, _callee4, this, [[4, 16, 20, 28], [21,, 23, 27]]);
+    return new Generador(function (s1, k) {
+        // let done;
+        var r = execute(p, s1, function (x2, s2) {
+            //done = true;
+            return k(f(x2), s2);
         });
+        return (function loop(r) {
+            if (r && r._yield) return Yield(Pair(f(r.first.x), r.first.s), function () {
+                return loop(r.rest());
+            });
+            return r;
+        })(r);
     });
 };
 
@@ -338,24 +249,9 @@ var weightedChoice = exports.weightedChoice = function weightedChoice(weightMap)
     var table = walker(arrayMap(weightMap, function (x) {
         return [x[0], wrap(x[1])];
     }));
-    return new Generador(function () {
-        return regeneratorRuntime.mark(function _callee5(s, r) {
-            var selected;
-            return regeneratorRuntime.wrap(function _callee5$(_context6) {
-                while (1) switch (_context6.prev = _context6.next) {
-                    case 0:
-                        selected = table(r);
-                        return _context6.delegateYield(execute(selected, s, r), 't0', 2);
-
-                    case 2:
-                        return _context6.abrupt('return', _context6.t0);
-
-                    case 3:
-                    case 'end':
-                        return _context6.stop();
-                }
-            }, _callee5, this);
-        });
+    return new Generador(function (s, k) {
+        var selected = table(s.random);
+        return execute(selected, s, k);
     });
 };
 
@@ -409,9 +305,22 @@ var many = exports.many = function many(g) {
             'message': "Probability must be between [0, 1]"
         };
     }
-    return declare(function (self) {
-        return weightedChoice([[prob, seq(g, self)], [1 - prob, noop]]);
-    });
+    if (prob === 0) return empty;else if (prob === 1) {
+        var _ret = (function () {
+            var self = undefined;
+            return {
+                v: self = seq(g, declare(function () {
+                    return self;
+                }))
+            };
+        })();
+
+        if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+    }
+    var self = undefined;
+    return self = weightedChoice([[prob, seq(g, declare(function () {
+        return self;
+    }))], [1 - prob, empty]]);
 };
 
 /**
@@ -434,73 +343,59 @@ var many1 = exports.many1 = function many1(g) {
     @param r Random number generator.
 */
 var exec = exports.exec = regeneratorRuntime.mark(function exec(g, ud) {
-    var r = arguments.length <= 2 || arguments[2] === undefined ? Math.random : arguments[2];
-
-    var _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, x;
-
-    return regeneratorRuntime.wrap(function exec$(_context7) {
-        while (1) switch (_context7.prev = _context7.next) {
+    var random = arguments.length <= 2 || arguments[2] === undefined ? Math.random : arguments[2];
+    var state, r;
+    return regeneratorRuntime.wrap(function exec$(_context) {
+        while (1) switch (_context.prev = _context.next) {
             case 0:
-                _iteratorNormalCompletion2 = true;
-                _didIteratorError2 = false;
-                _iteratorError2 = undefined;
-                _context7.prev = 3;
-                _iterator2 = execute(g, State.setUd(State.empty, ud), r)[Symbol.iterator]();
+                state = State.setRandom(State.setUd(State.empty, ud), random);
+                r = execute(g, state, function (x, s) {
+                    return x;
+                });
 
-            case 5:
-                if (_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done) {
-                    _context7.next = 12;
+            case 2:
+                if (!true) {
+                    _context.next = 14;
                     break;
                 }
 
-                x = _step2.value;
-                _context7.next = 9;
-                return x.x;
+                if (!(r === Done)) {
+                    _context.next = 5;
+                    break;
+                }
+
+                return _context.abrupt('return');
+
+            case 5:
+                if (r._yield) {
+                    _context.next = 7;
+                    break;
+                }
+
+                return _context.abrupt('return');
+
+            case 7:
+                _context.next = 9;
+                return r.first.x;
 
             case 9:
-                _iteratorNormalCompletion2 = true;
-                _context7.next = 5;
-                break;
+                if (r.rest) {
+                    _context.next = 11;
+                    break;
+                }
 
-            case 12:
-                _context7.next = 18;
+                return _context.abrupt('break', 14);
+
+            case 11:
+                r = r.rest();
+                _context.next = 2;
                 break;
 
             case 14:
-                _context7.prev = 14;
-                _context7.t0 = _context7['catch'](3);
-                _didIteratorError2 = true;
-                _iteratorError2 = _context7.t0;
-
-            case 18:
-                _context7.prev = 18;
-                _context7.prev = 19;
-
-                if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                    _iterator2.return();
-                }
-
-            case 21:
-                _context7.prev = 21;
-
-                if (!_didIteratorError2) {
-                    _context7.next = 24;
-                    break;
-                }
-
-                throw _iteratorError2;
-
-            case 24:
-                return _context7.finish(21);
-
-            case 25:
-                return _context7.finish(18);
-
-            case 26:
             case 'end':
-                return _context7.stop();
+                return _context.stop();
         }
-    }, exec, this, [[3, 14, 18, 26], [19,, 21, 25]]);
+    }, exec, this);
 });
 
 /**
@@ -513,28 +408,28 @@ var exec = exports.exec = regeneratorRuntime.mark(function exec(g, ud) {
     @param r Random number generator.
 */
 var fold = exports.fold = function fold(f, z, g, ud) {
-    var r = arguments.length <= 4 || arguments[4] === undefined ? Math.random : arguments[4];
-    var _iteratorNormalCompletion3 = true;
-    var _didIteratorError3 = false;
-    var _iteratorError3 = undefined;
+    var random = arguments.length <= 4 || arguments[4] === undefined ? Math.random : arguments[4];
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
+    var _iteratorError = undefined;
 
     try {
-        for (var _iterator3 = exec(g, ud, r)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-            var x = _step3.value;
+        for (var _iterator = exec(g, ud, random)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var x = _step.value;
 
             z = f(z, x);
         }
     } catch (err) {
-        _didIteratorError3 = true;
-        _iteratorError3 = err;
+        _didIteratorError = true;
+        _iteratorError = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                _iterator3.return();
+            if (!_iteratorNormalCompletion && _iterator.return) {
+                _iterator.return();
             }
         } finally {
-            if (_didIteratorError3) {
-                throw _iteratorError3;
+            if (_didIteratorError) {
+                throw _iteratorError;
             }
         }
     }

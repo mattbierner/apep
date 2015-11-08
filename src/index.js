@@ -26,18 +26,22 @@ const Generador = function(run) {
 /**
     Internal state object.
 */
-const State = (vars, ud) => ({
+const State = (random, vars, ud) => ({
+    'random': random,
     'vars': vars,
     'ud': ud
 });
 
-State.empty = State({}, null);
+State.empty = State(Math.random, {}, null);
 
 State.setUd = (s, ud) =>
-    State(s.vars, ud);
+    State(s.random, s.vars, ud);
 
 State.setVars = (s, vars) =>
-    State(vars, s.ud);
+    State(s.random, vars, s.ud);
+
+State.setRandom = (s, random) =>
+    State(random, s.vars, s.ud);
 
 State.getVar = (s, name, def) =>
     s.vars.hasOwnProperty(name)
@@ -53,8 +57,8 @@ State.setVar = (s, name, value) => {
 /**
     Run a given generator.
 */
-export const execute = function*(p, s, r) {
-    return yield* p.run()(s, r);
+export const execute = (p, s, k) => {
+    return p.run(s, k);
 };
 
 /**
@@ -113,27 +117,29 @@ export const execute = function*(p, s, r) {
 */
 export const declare = (def) => {
     let self;
-    return self = new Generador(() =>
-        function*(s, r) {
-            return yield* execute(def(self), s, r);
-        });
+    return self = new Generador((s, k) =>
+        execute(def(self), s, k));
 };
+
+const Yield = (first, rest) => ({
+    'first': first,
+    'rest': rest,
+    '_yield': true
+});
+
+const Done = {};
 
 /**
     Generate a literal value without any transformations applied.
 */
 export const lit = (x) =>
-    new Generador(() =>
-        function*(s, _) {
-            const v = Pair(x, s);
-            yield v;
-            return v;
-        });
-
+    new Generador((s, k) =>
+        Yield(Pair(x, s), _ => k(x, s))) 
+ 
 /**
-    Generate an empty value.
+    Empty value generator.
 */
-export const empty = lit('');
+export const empty = new Generador(_ => Done);
 
 /**
     Generate a literal string value.
@@ -141,7 +147,7 @@ export const empty = lit('');
     Attempts to convert the input value to a string.
 */
 export const str = function(x) {
-    return arguments.length === 0 ? empty : lit('' +  x);
+    return arguments.length === 0 ? lit('') : lit('' +  x);
 };
 
 /**
@@ -155,14 +161,20 @@ export const wrap = (x) =>
 /**
     Run `a` and then `run b`.
 */
+export const chain = (a, f) => {
+    a = wrap(a);
+    return new Generador((s, k) =>
+        execute(a, s, (x, s) =>
+            execute(wrap(f(x)), s, k)));
+};
+
+/**
+    Run `a` and then `run b`.
+*/
 export const next = (a, b) => {
     a = wrap(a);
     b = wrap(b);
-    return new Generador(() =>
-        function*(s1, r) {
-            const {s} = yield* execute(a, s1, r);
-            return yield* execute(b, s, r);
-        });
+    return chain(a, _ => b);
 };
 
 /**
@@ -179,15 +191,21 @@ export const seq = (...elements) =>
     Map function `f` over each element produced by `p`.
 */
 export const map = (p, f) =>
-    new Generador(() =>
-        function*(s1, r) {
-            let s = s1;
-            for (let v of execute(p, s, r)) {
-                s = v.s
-                yield Pair(f(v.x), s);
-            }
+    new Generador((s1, k) => {
+       // let done;
+        let r = execute(p, s1, (x2, s2) => {
+            //done = true;
+            return k(f(x2), s2);
         });
-
+        return (function loop(r) {
+            if (r && r._yield)
+                return Yield(
+                    Pair(f(r.first.x), r.first.s),
+                    () => loop(r.rest()));
+            return r;
+        })(r);
+    });
+        
 /* Choice
  ******************************************************************************/
 /**
@@ -195,12 +213,11 @@ export const map = (p, f) =>
 */
 export const weightedChoice = (weightMap) => {
     const table = walker(arrayMap(weightMap, x => [x[0], wrap(x[1])]));
-    return new Generador(() =>
-        function*(s, r) {
-            const selected = table(r);
-            return yield* execute(selected, s, r);
-        });
-};
+    return new Generador((s, k) => {
+        const selected = table(s.random);
+        return execute(selected, s, k);
+    });
+}; 
 
 /**
      Choose from along one or more generators.
@@ -242,10 +259,16 @@ export const many = (g, prob = 0.5) => {
             'message': "Probability must be between [0, 1]"
         };
     }
-    return declare(self =>
-        weightedChoice([
-            [prob, seq(g, self)],
-            [1 - prob, noop]]));
+    if (prob === 0)
+        return empty;
+    else if (prob === 1) {
+        let self;
+        return self = seq(g, declare(() => self));
+    }
+    let self;
+    return self = weightedChoice([
+        [prob, seq(g, declare(() => self))],
+        [1 - prob, empty]]);
 };
 
 /**
@@ -265,9 +288,19 @@ export const many1 = (g, prob = 0.5) =>
     @param ud Optional user data threaded through the generator's states.
     @param r Random number generator.
 */
-export const exec = function*(g, ud, r = Math.random) {
-    for (let x of execute(g, State.setUd(State.empty, ud), r))
-        yield x.x;
+export const exec = function*(g, ud, random = Math.random) {
+    var state = State.setRandom(State.setUd(State.empty, ud), random);
+    let r = execute(g, state, (x, s) => (x));    
+    while (true) { 
+        if (r === Done)
+            return;
+        if (!r._yield)
+            return;
+        yield r.first.x;
+        if (!r.rest)
+            break; 
+        r = r.rest();
+    }
 };
 
 /**
@@ -279,8 +312,8 @@ export const exec = function*(g, ud, r = Math.random) {
     @param ud Optional user data threaded through the generator's states.
     @param r Random number generator.
 */
-export const fold = (f, z, g, ud, r = Math.random) => {
-    for (const x of exec(g, ud, r))
+export const fold = (f, z, g, ud, random = Math.random) => {
+    for (const x of exec(g, ud, random))
         z = f(z, x);
     return z;
 };
