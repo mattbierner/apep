@@ -224,31 +224,34 @@ var seq = exports.seq = function seq() {
     Map function `f` over each element produced by `p`.
 */
 var chain = exports.chain = function chain(p, f) {
-    return new Generador(function (s) {
-        return (function loop(r, k) {
-            if (r && r.rest) {
-                var _ret = (function () {
-                    var r2 = execute(f(r.first.x), r.first.s);
-                    if (r2 && r2.rest) {
-                        return {
-                            v: Yield(r2.first, function () {
-                                return loop(r2.rest(), function () {
-                                    return loop(r.rest(), k);
-                                });
-                            })
-                        };
-                    }
-                    return {
-                        v: loop(r2, function () {
-                            return loop(r.rest());
+    var loop = function loop(r) {
+        if (r && r.rest) {
+            var _ret = (function () {
+                var r2 = execute(f(r.first.x), r.first.s);
+                if (r2 && r2.rest) return {
+                        v: Yield(r2.first, function () {
+                            return loopInner(r2.rest(), r);
                         })
                     };
-                })();
+                return {
+                    v: loop(r.rest(), k)
+                };
+            })();
 
-                if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
-            }
-            return k ? k() : r;
-        })(execute(p, s));
+            if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+        }
+        return r;
+    };
+
+    var loopInner = function loopInner(r, r2) {
+        if (r && r.rest) return Yield(r.first, function () {
+            return loopInner(r.rest(), r2);
+        });
+        return loop(r2.rest());
+    };
+
+    return new Generador(function (s) {
+        return loop(execute(p, s));
     });
 };
 

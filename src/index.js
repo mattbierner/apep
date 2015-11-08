@@ -191,20 +191,26 @@ export const seq = (...elements) =>
 /**
     Map function `f` over each element produced by `p`.
 */
-export const chain = (p, f) =>
-    new Generador(s =>
-        (function loop(r, k) {
-            if (r && r.rest) {
-                const r2 = execute(f(r.first.x), r.first.s);
-                if (r2 && r2.rest) {
-                    return Yield(
-                        r2.first,
-                        () => loop(r2.rest(), () => loop(r.rest(), k)));
-                }
-                return loop(r2,  () => loop(r.rest()));
-            }
-            return k ? k() : r;
-        })(execute(p, s)));
+export const chain = (p, f) => {
+    const loop = (r) => {
+        if (r && r.rest) {
+            const r2 = execute(f(r.first.x), r.first.s);
+            if (r2 && r2.rest)
+                return Yield(r2.first, () => loopInner(r2.rest(), r));
+            return loop(r.rest(), k);
+        }
+        return r;
+    };
+    
+    const loopInner = (r, r2) => {
+        if (r && r.rest)
+            return Yield(r.first, () => loopInner(r.rest(), r2));
+        return loop(r2.rest());
+    };
+
+    return new Generador(s =>
+        loop(execute(p, s)));
+}
 
 /**
     Map function `f` over each element produced by `p`.
