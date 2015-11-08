@@ -15,15 +15,17 @@ const tvHackerQuip = pep.declare(() =>
 
 const evilDoer = pep.choice("She's", "He's", "They're");
 
-const subject = pep.choice('CPU', 'internet', 'GUI', 'IPv6', 'file system', 'access control list');
+const subject = pep.choice('CPU', 'HTML', 'GUI', 'IPv6', 'file system', 'ACL');
 
 const somethingBad = pep.choice('on fire', 'doxxed', 'SQL injected', 'double encrypted');
 
-const doingSomthingBad = pep.choice('pinging', 'ROT13ing', 'seg faulting', 'doxxing', 'DOSing');
+const doingSomthingBad = pep.choice('pinging', 'ROT13ing', 'seg faulting', 'doxxing', 'DDOSing');
 
 const target = pep.choice('NSA', 'CIA', 'FBI', 'mainframe', 'shell', 'cloud');
 
-const exlaimation = pep.choice('BLARK!', 'ARG!', 'BARF!', 'GROK!', 'ACK!')
+const exlaimation = pep.seq(
+    pep.choice('BLARK', 'ARG', 'BARF', 'GROK', 'ACK'),
+    pep.many1('!'));
 
 for (var i = 0; i < 10; ++i)
     console.log(pep.run(tvHackerQuip))
