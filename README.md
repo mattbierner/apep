@@ -29,7 +29,7 @@ const exlaimation = pep.seq(
     pep.choice('BLARK', 'ARG', 'BARF', 'GROK', 'ACK'),
     pep.many1('!'));
 
-// Regnerate some output
+// Generate some output
 for (var i = 0; i < 10; ++i)
     console.log(pep.run(tvHackerQuip))
 ```
