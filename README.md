@@ -2,11 +2,10 @@
     <img src="https://raw.githubusercontent.com/mattbierner/apep/master/documentation/apep.png" alt="Apep" />
 </div>
 
-Apep is a Javascript text generation library influenced by the [Dada Engine][dada].
+Javascript text generation library influenced by the [Dada Engine][dada].
 
 ```javascript
-// Generate quips for hacker on a TV show.
-// Said hacker should be frantically mashing keys while saying these.
+// Generate quips for a hacker on a TV show.
 const pep = require('apep');
 
 // declare allows for forward references
@@ -33,7 +32,7 @@ for (var i = 0; i < 10; ++i)
     console.log(pep.run(tvHackerQuip))
 ```
 
-Which outputs:
+Which outputs (said hacker must be frantically mashing keys while saying these):
 
 ```
 BLARK! The GUI is double encrypted!
