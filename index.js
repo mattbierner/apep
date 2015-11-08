@@ -11,9 +11,7 @@ Object.defineProperty(exports, "__esModule", {
 require("babel-polyfill");
 var walker = require('walker-sample');
 
-var randomInt = function randomInt(min, max, r) {
-    return Math.floor(r() * (max - min)) + min;
-};
+var arrayMap = Function.prototype.call.bind(Array.prototype.map);
 
 /**
     Pac
@@ -144,6 +142,9 @@ var declare = exports.declare = function declare(def) {
                         return _context2.delegateYield(execute(def(self), s, r), 't0', 1);
 
                     case 1:
+                        return _context2.abrupt('return', _context2.t0);
+
+                    case 2:
                     case 'end':
                         return _context2.stop();
                 }
@@ -328,11 +329,13 @@ var map = exports.map = function map(p, f) {
     });
 };
 
+/* Choice
+ ******************************************************************************/
 /**
     Choose from along one or more generators, each with its own custom weight.
 */
 var weightedChoice = exports.weightedChoice = function weightedChoice(weightMap) {
-    var table = walker(weightMap.map(function (x) {
+    var table = walker(arrayMap(weightMap, function (x) {
         return [x[0], wrap(x[1])];
     }));
     return new Generador(function () {
@@ -357,18 +360,22 @@ var weightedChoice = exports.weightedChoice = function weightedChoice(weightMap)
 };
 
 /**
-     Choose from along one or more generators, each with the same weight.
+     Choose from along one or more generators.
+     
+     Each element has the same weight.
      
      @param elements Array of elements
 */
 var choicea = exports.choicea = function choicea(elements) {
-    return weightedChoice(elements.map(function (x) {
+    return weightedChoice(arrayMap(elements, function (x) {
         return [1, x];
     }));
 };
 
 /**
      Choose from along one or more generators taken as arguments.
+     
+     @see choicea
 */
 var choice = exports.choice = function choice() {
     for (var _len2 = arguments.length, elements = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
@@ -378,6 +385,47 @@ var choice = exports.choice = function choice() {
     return choicea(elements);
 };
 
+/**
+    Generator that optionally produces a value.
+*/
+var opt = exports.opt = choice.bind(null, empty);
+
+/* Iteration
+ ******************************************************************************/
+
+/**
+    Run a generator zero or more times.
+
+    @param g Generator
+    @param prob At each step, what is the probability that `g` is run.
+        1 means that `g` is run infinity, while 0 means that `g` is never run.
+*/
+var many = exports.many = function many(g) {
+    var prob = arguments.length <= 1 || arguments[1] === undefined ? 0.5 : arguments[1];
+
+    if (prob > 1 || prob < 0) {
+        throw {
+            'name': "ManyRangeError",
+            'message': "Probability must be between [0, 1]"
+        };
+    }
+    return declare(function (self) {
+        return weightedChoice([[prob, seq(g, self)], [1 - prob, noop]]);
+    });
+};
+
+/**
+    Run a generator 1 or more times.
+    
+    @see many
+*/
+var many1 = exports.many1 = function many1(g) {
+    var prob = arguments.length <= 1 || arguments[1] === undefined ? 0.5 : arguments[1];
+    return seq(g, many(g, prob));
+};
+
+/* Execution
+ ******************************************************************************/
 /**
     Begin the execution of a generator.
     

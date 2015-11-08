@@ -13,16 +13,5 @@ gulp.task("default", () =>
         .pipe(sourcemaps.write("."))
         .pipe(gulp.dest("./")));
 
-gulp.task("tests", () =>
-    gulp.src("tests_src/*.js")
-        .pipe(plumber())
-        .pipe(sourcemaps.init())
-        .pipe(babel({
-            presets: ['es2015']
-        }))
-        .pipe(sourcemaps.write("."))
-        .pipe(gulp.dest("./tests")));
-
 gulp.watch('src/*.js', ['default']);
-gulp.watch('tests_src/*.js', ['tests']);
 

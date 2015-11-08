@@ -1,5 +1,3 @@
-'use strict';
-
 require("babel-polyfill");
 
 var gen = require('../index');
@@ -11,4 +9,4 @@ describe('run', function () {
         assert.strictEqual('4abc3', p);
     });
 });
-//# sourceMappingURL=run.js.map
+

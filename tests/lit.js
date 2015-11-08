@@ -1,16 +1,14 @@
-'use strict';
+"use strict";
+const gen = require('../index');
+const assert = require('assert');
 
-require("babel-polyfill");
-var gen = require('../index');
-var assert = require('assert');
+describe('lit', () => {
 
-describe('lit', function () {
-
-    it('should yield input value', function () {
-        var p = gen.exec(gen.lit(5));
-        var n = Array.from(p);
-        assert.strictEqual(1, n.length);
-        assert.strictEqual(5, n[0]);
-    });
+it('should yield input value', () => {
+    const p = gen.exec(gen.lit(5));
+    const n = Array.from(p);
+    assert.strictEqual(1, n.length);
+    assert.strictEqual(5, n[0]);
 });
-//# sourceMappingURL=lit.js.map
+
+});

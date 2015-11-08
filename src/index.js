@@ -6,8 +6,8 @@
 require("babel-polyfill");
 const walker = require('walker-sample');
 
-const randomInt = (min, max, r) =>
-    Math.floor(r() * (max - min)) + min;
+const arrayMap = Function.prototype.call.bind(Array.prototype.map);
+
 
 /**
     Pac
@@ -115,7 +115,7 @@ export const declare = (def) => {
     let self;
     return self = new Generador(() =>
         function*(s, r) {
-            yield* execute(def(self), s, r);
+            return yield* execute(def(self), s, r);
         });
 };
 
@@ -188,11 +188,13 @@ export const map = (p, f) =>
             }
         });
 
+/* Choice
+ ******************************************************************************/
 /**
     Choose from along one or more generators, each with its own custom weight.
 */
 export const weightedChoice = (weightMap) => {
-    const table = walker(weightMap.map(x => [x[0], wrap(x[1])]));
+    const table = walker(arrayMap(weightMap, x => [x[0], wrap(x[1])]));
     return new Generador(() =>
         function*(s, r) {
             const selected = table(r);
@@ -201,19 +203,61 @@ export const weightedChoice = (weightMap) => {
 };
 
 /**
-     Choose from along one or more generators, each with the same weight.
+     Choose from along one or more generators.
+     
+     Each element has the same weight.
      
      @param elements Array of elements
 */
 export const choicea = (elements) =>
-    weightedChoice(elements.map(x => [1, x]));
+    weightedChoice(arrayMap(elements, x => [1, x]));
 
 /**
      Choose from along one or more generators taken as arguments.
+     
+     @see choicea
 */
 export const choice = (...elements) =>
     choicea(elements);
 
+/**
+    Generator that optionally produces a value.
+*/
+export const opt = choice.bind(null, empty);
+
+/* Iteration
+ ******************************************************************************/
+
+/**
+    Run a generator zero or more times.
+
+    @param g Generator
+    @param prob At each step, what is the probability that `g` is run.
+        1 means that `g` is run infinity, while 0 means that `g` is never run.
+*/
+export const many = (g, prob = 0.5) => {
+    if (prob > 1 || prob < 0) {
+        throw {
+            'name': "ManyRangeError",
+            'message': "Probability must be between [0, 1]"
+        };
+    }
+    return declare(self =>
+        weightedChoice([
+            [prob, seq(g, self)],
+            [1 - prob, noop]]));
+};
+
+/**
+    Run a generator 1 or more times.
+    
+    @see many
+*/
+export const many1 = (g, prob = 0.5) =>
+    seq(g, many(g, prob));
+
+/* Execution
+ ******************************************************************************/
 /**
     Begin the execution of a generator.
     

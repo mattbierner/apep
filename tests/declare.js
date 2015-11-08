@@ -1,34 +1,28 @@
-'use strict';
+"use strict";
+const gen = require('../index');
+const assert = require('assert');
 
-require("babel-polyfill");
+describe('declare', () => {
 
-var gen = require('../index');
-var assert = require('assert');
-
-describe('declare', function () {
-
-    it('Forward reference resolve late', function () {
-        var ms = gen.declare(function () {
-            return m;
-        });
-        var m = gen.str('abc');
-
-        var p = gen.exec(ms);
-        var n = Array.from(p);
-        assert.strictEqual(1, n.length);
-        assert.strictEqual('abc', n[0]);
-    });
-
-    it('Self reference resolve to self', function () {
-        var manyAs = gen.declare(function (self) {
-            return gen.seq(gen.lit(1), gen.map(self, function (x) {
-                return x + 1;
-            }));
-        });
-
-        var p = gen.exec(manyAs);
-        assert.strictEqual(1, p.next().value);
-        assert.strictEqual(2, p.next().value);
-    });
+it('Forward reference resolve late', () => {
+    const ms = gen.declare(() => m);
+    const m = gen.str('abc');
+    
+    const p = gen.exec(ms);
+    const n = Array.from(p);
+    assert.strictEqual(1, n.length);
+    assert.strictEqual('abc', n[0]);
 });
-//# sourceMappingURL=declare.js.map
+
+it('Self reference resolve to self', () => {
+    const manyAs = gen.declare((self) => 
+        gen.seq(gen.lit(1), gen.map(self, (x) => x + 1)));
+    
+    const p = gen.exec(manyAs);
+    assert.strictEqual(1, p.next().value);
+    assert.strictEqual(2, p.next().value);
+});
+
+
+
+});
