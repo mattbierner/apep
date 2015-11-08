@@ -73,10 +73,24 @@ State.setVar = function (s, name, value) {
     return State.setVars(s, newVars);
 };
 
+var Yield = function Yield(first, rest) {
+    return {
+        first: first,
+        rest: rest
+    };
+};
+
+var Done = function Done(first) {
+    return {
+        first: first,
+        rest: null
+    };
+};
+
 /**
     Run a given generator.
 */
-var execute = exports.execute = function execute(p, s) {
+var execute = function execute(p, s) {
     return p._impl(s);
 };
 
@@ -88,38 +102,38 @@ var execute = exports.execute = function execute(p, s) {
         
     Anonymous self reference:
     
-        gen.declare((self) =>
-            gen.seq(m, self));
+        pep.declare((self) =>
+            pep.seq(m, self));
             
     Use of forward declarations:
     
         // Use `m` before it is declared or defined.
-        const ms = gen.declare(() =>
-            gen.seq(m, self));
+        const ms = pep.declare(() =>
+            pep.seq(m, self));
             
-        const m = gen.lit('n');
+        const m = pep.lit('n');
     
     Later declaration: 
     
         // Declare that the some generator `ms` will exist.
-        let ms = gen.declare(() => ms);
+        let ms = pep.declare(() => ms);
         
         // Use `ms` in any expression.
-        const p = gen.seq('a', ms);
+        const p = pep.seq('a', ms);
         
         ...
         
         // Actually define `ms` sometime later.
-        ms = gen.str('abc');
+        ms = pep.str('abc');
 
     Also can be used to introduce simple, scoped state:
         
-        const counter = gen.declare(() => {
+        const counter = pep.declare(() => {
             // declare some variables local to this block.
             let sum = 0;
 
-            return gen.seq(
-                gen.seq(gen.str(1), gen.str(2), gen.str(3))
+            return pep.seq(
+                pep.seq(pep.str(1), pep.str(2), pep.str(3))
                     .map(x => {
                         // Update the state in an expression.
                         sum += i;
@@ -128,7 +142,7 @@ var execute = exports.execute = function execute(p, s) {
                 // and use the state sometime later.
                 // Declare is used to make sure the current value of `i` is
                 // always returned.
-                gen.declare(() => gen.lit(i)));
+                pep.declare(() => pep.lit(i)));
         });
             
     For performance reasons, use declare around the smallest possible generator
@@ -139,20 +153,6 @@ var declare = exports.declare = function declare(def) {
     return self = new Generador(function (s) {
         return execute(def(self), s);
     });
-};
-
-var Yield = function Yield(first, rest) {
-    return {
-        first: first,
-        rest: rest
-    };
-};
-
-var Done = function Done(first) {
-    return {
-        'first': first,
-        'rest': null
-    };
 };
 
 /* Value Generators
@@ -250,7 +250,7 @@ var chain = exports.chain = function chain(p, f) {
                         })
                     };
                 return {
-                    v: loop(r.rest(), k)
+                    v: loop(r.rest())
                 };
             })();
 
@@ -333,6 +333,17 @@ Generador.prototype.combine = function () {
     }
 
     return join.apply(undefined, [this].concat(generators));
+};
+
+/**
+    Combinator that consumes all yielded values.
+    
+    Still useful for updating state.
+*/
+var noop = exports.noop = function noop() {
+    return chain(seq.apply(undefined, arguments), function (_) {
+        return empty;
+    });
 };
 
 /* Choice
@@ -447,14 +458,26 @@ var get = exports.get = function get(name) {
 };
 
 /**
-    Lookup a stored variable.
+    Store the value of a variable.
     
     @param name Key of the var.
-    @param def Value returned if the variable does not exist.
+    @param value New value.
 */
 var set = exports.set = function set(name, value) {
+    return modify(name, function (_) {
+        return value;
+    });
+};
+
+/**
+    Update the value of a variable.
+    
+    @param name Key of the var.
+    @param f Map old value to new value value.
+*/
+var modify = exports.modify = function modify(name, f) {
     return modifyState(function (s) {
-        return State.setVar(s, name, value);
+        return State.setVar(s, name, f(State.getVar(s, name)));
     });
 };
 

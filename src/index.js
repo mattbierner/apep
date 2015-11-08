@@ -57,10 +57,20 @@ State.setVar = (s, name, value) => {
     return State.setVars(s, newVars);
 };
 
+const Yield = (first, rest) => ({
+    first: first,
+    rest: rest
+});
+
+const Done = (first) => ({
+    first: first,
+    rest: null
+});
+
 /**
     Run a given generator.
 */
-export const execute = (p, s) => {
+const execute = (p, s) => {
     return p._impl(s);
 };
 
@@ -72,38 +82,38 @@ export const execute = (p, s) => {
         
     Anonymous self reference:
     
-        gen.declare((self) =>
-            gen.seq(m, self));
+        pep.declare((self) =>
+            pep.seq(m, self));
             
     Use of forward declarations:
     
         // Use `m` before it is declared or defined.
-        const ms = gen.declare(() =>
-            gen.seq(m, self));
+        const ms = pep.declare(() =>
+            pep.seq(m, self));
             
-        const m = gen.lit('n');
+        const m = pep.lit('n');
     
     Later declaration: 
     
         // Declare that the some generator `ms` will exist.
-        let ms = gen.declare(() => ms);
+        let ms = pep.declare(() => ms);
         
         // Use `ms` in any expression.
-        const p = gen.seq('a', ms);
+        const p = pep.seq('a', ms);
         
         ...
         
         // Actually define `ms` sometime later.
-        ms = gen.str('abc');
+        ms = pep.str('abc');
 
     Also can be used to introduce simple, scoped state:
         
-        const counter = gen.declare(() => {
+        const counter = pep.declare(() => {
             // declare some variables local to this block.
             let sum = 0;
 
-            return gen.seq(
-                gen.seq(gen.str(1), gen.str(2), gen.str(3))
+            return pep.seq(
+                pep.seq(pep.str(1), pep.str(2), pep.str(3))
                     .map(x => {
                         // Update the state in an expression.
                         sum += i;
@@ -112,7 +122,7 @@ export const execute = (p, s) => {
                 // and use the state sometime later.
                 // Declare is used to make sure the current value of `i` is
                 // always returned.
-                gen.declare(() => gen.lit(i)));
+                pep.declare(() => pep.lit(i)));
         });
             
     For performance reasons, use declare around the smallest possible generator
@@ -123,16 +133,6 @@ export const declare = (def) => {
     return self = new Generador(s =>
         execute(def(self), s));
 };
-
-const Yield = (first, rest) => ({
-    first: first,
-    rest: rest
-});
-
-const Done = (first) => ({
-    'first': first,
-    'rest': null
-});
         
 /* Value Generators
  ******************************************************************************/
@@ -206,7 +206,7 @@ export const chain = (p, f) => {
             const r2 = execute(f(r.first.x), r.first.s);
             if (r2 && r2.rest)
                 return Yield(r2.first, () => loopInner(r2.rest(), r));
-            return loop(r.rest(), k);
+            return loop(r.rest());
         }
         return r;
     };
@@ -267,6 +267,14 @@ export const join = combine.bind(null, add, '');
 Generador.prototype.combine = function(...generators) {
     return join(this, ...generators);
 };
+
+/**
+    Combinator that consumes all yielded values.
+    
+    Still useful for updating state.
+*/
+export const noop = (...generators) =>
+    chain(seq(...generators), _ => empty);
 
 /* Choice
  ******************************************************************************/
@@ -354,15 +362,24 @@ export const get = (name, def = '') =>
     map(getState, s => State.getVar(s, name, def));
 
 /**
-    Lookup a stored variable.
+    Store the value of a variable.
     
     @param name Key of the var.
-    @param def Value returned if the variable does not exist.
+    @param value New value.
 */
 export const set = (name, value) => 
+    modify(name, _ => value);
+
+/**
+    Update the value of a variable.
+    
+    @param name Key of the var.
+    @param f Map old value to new value value.
+*/
+export const modify = (name, f) => 
     modifyState(s =>
-        State.setVar(s, name, value));
-        
+        State.setVar(s, name, f(State.getVar(s, name))));
+      
 /**
     Return the current user data.
 */

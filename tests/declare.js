@@ -23,4 +23,23 @@ describe('declare', () => {
         assert.strictEqual(2, p.next().value);
     });
 
+    it('Local var', () => {
+        const counter = pep.declare(() => {
+            // declare some variables local to this block.
+            let sum = 0;
+
+            return pep.seq(
+                pep.noop(pep.seq(pep.lit(1), pep.lit(2), pep.lit(3))
+                    .map(x => {
+                        // Update the state in an expression.
+                        sum += x;
+                        return x;
+                    })),
+                // and use the state sometime later.
+                // Declare is used to make sure the current value of `i` is
+                // always returned.
+                pep.declare(() => pep.lit(sum)));
+        });
+        assert.strictEqual('6', counter.run());
+    });
 });
