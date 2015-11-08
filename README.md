@@ -51,7 +51,7 @@ GROK! He's seg faulting the NSA!
 
 Apep provides a small set of combinators, from which fairly complex grammers can be constructed. All grammers are specified directly in Javascript.
 
-### Links
+## Usage
 
 ```sh
 $ npm install apep
@@ -60,10 +60,27 @@ $ npm install apep
 * [Documentation][documentation]
 
 
+### Examples
+* [Exam question generator](https://github.com/mattbierner/apep/blob/master/examples/exam.js) - Ported from dada engine.
 
-### Contributing
+If you've used Apep to generate something awesome, please submit a pull request to add it to the list above. The more absurd the better.
 
 
+## Contributing
+Any contributions to Apep are welcome. If you come across any problems, please [open an issue](https://github.com/mattbierner/apep/issues).
+
+Apep uses gulp and Babel for building. After forking the repo to your local machine, run the following to get started building:
+
+```sh
+$ npm install
+$ gulp default
+``` 
+
+Mocha is used for testing. To run the tests:
+
+```sh
+$ mocha tests
+```
 
 [documentation]: https://github.com/mattbierner/apep/wiki
 [dada]: http://dev.null.org/dadaengine/
