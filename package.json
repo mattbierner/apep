@@ -1,33 +1,20 @@
 {
     "name": "apep",
     "version": "0.0.0",
-    "description": "Parser Combinator Library",
+    "description": "Generate random text from a grammar.",
     "author": "Matt Bierner",
-    "homepage": "http://bennu-js.com",
     "license": "MIT",
     "repository": {
         "type": "git",
         "url": "https://github.com/mattbierner/apep.git"
     },
     "keywords": [
-        "parse",
-        "parser",
-        "combinator",
-        "combinatory",
-        "combinatory parsing",
-        "functional"],
+        "text",
+        "dada engine",
+        "generator"],
 
     "main": "index.js",
-    "directories": {
-        "lib": "dist_node/"
-    },
-    "files": [
-        "dist_node/",
-        "lib/",
-        "tests/",
-        "index.js",
-        "test.js"
-    ],
+   
     "dependencies": {
         "walker-sample": "^0.0.0"    
     },
@@ -42,10 +29,6 @@
     },
     
     "scripts": {
-        "test": "node test.js",
-        
-        "build": "npm run build-amd && npm run build-node",
-        "build-amd": "khepri lib -o dist",
-        "build-node": "khepri lib -o dist_node --package_manager=node"
+        "test": "node test.js"
     }
 }

@@ -1,130 +1,65 @@
-## About
-Bennu is a Javascript parser combinator library based on [Parsec][Parsec].
+<div align="center" >
+    <img src="" alt="Apep" />
+</div>
 
-Parser combinators allow complex parsers to be created from a set of simple
-building blocks. Compared to other parsing techniques, combinatorial parsers
-can be written more quickly and integrate better with the host language.
+Apep is a Javascript text generation library influenced by the [Dada Engine][dada].
 
 ```javascript
-// Very simple Brainfuck Bennuu parser in Khepri
+// Generate quips for hacker on a TV show.
+// Said hacker should be frantically mashing keys while saying these.
+const pep = require('apep');
 
-var op := oneOf '><+-.,';
+// declare allows for forward references
+const tvHackerQuip = pep.declare(() =>
+    pep.seq(exlaimation, ' ',
+        pep.choice(
+            pep.seq('The ' , subject, " is ", somethingBad, "!"),
+            pep.seq(evilDoer, ' ', doingSomthingBad, " the ", target, "!"))));
 
-var other := many <| noneOf "><+-.,[]"; // Brainfuck ignores any other characters
+const evilDoer = pep.choice("She's", "He's", "They're");
 
-var block := \body ->
-    between(character '[', character ']',
-        body);
+const subject = pep.choice('CPU', 'internet', 'GUI', 'IPv6', 'file system', 'access control list');
 
-var program := rec\self -> // allows referencing `program` in parse definition.
-    next(
-        other,                   // consume non BF chars at start,
-        eager <| sepEndBy(other, // and between instructions and ending program
-            either(
-                op,
-                block self)));
+const somethingBad = pep.choice('on fire', 'doxxed', 'SQL injected', 'double encrypted');
+
+const doingSomthingBad = pep.choice('pinging', 'ROT13ing', 'seg faulting', 'doxxing', 'DDOSing');
+
+const target = pep.choice('NSA', 'CIA', 'FBI', 'mainframe', 'shell', 'cloud');
+
+const exlaimation = pep.choice('BLARK!', 'ARG!', 'BARF!', 'GROK!', 'ACK!')
+
+// Regnerate some output
+for (var i = 0; i < 10; ++i)
+    console.log(pep.run(tvHackerQuip))
 ```
 
-Bennu provides many [Parsec][parsec] parser combinators. Bennu also provides
-functionality like memoization and running unmodified parser combinations incrementally..
+Which outputs:
 
+```
+BLARK! The GUI is double encrypted!
+BLARK! They're seg faulting the NSA!
+ACK! The file system is double encrypted!
+GROK! He's pinging the mainframe!
+BLARK! The GUI is on fire!
+GROK! She's seg faulting the CIA!
+BARF! He's ROT13ing the mainframe!
+ACK! She's DDOSing the cloud!
+GROK! He's seg faulting the NSA!
+ACK! The internet is doxxed!
+```
+
+Apep provides a small set of combinators, from which fairly complex grammers can be constructed. All grammers are specified directly in Javascript.
 
 ### Links
 * [Documentation][documentation]
 
-### Examples
 
-* [parse-pn][parse-pn] - Very simple polish notation calculator.
-* [parse-ecma][parse-ecma] - Combinatory parsers for lexing and parsing ECMAScript 5.1
-* [khepri][khepri] - Khepri language lexers and parsers.
-* [parse-re][parse-re] - ECMAScript regular expression grammar parser and engine
-  using Bennu parser combinators.
-* [parse-ecma-incremental][parse-ecma-incremental] - Demonstrates using unmodified
-  parsers to incrementally lex ECMAScript.
+# Usage
 
-
-# Using Bennu
-
-### To clone ##
-    git clone https://github.com/mattbierner/bennu bennu
-    cd bennu
-    git submodule update --init
-
-## With Node
-
-    $ npm install bennu
-
-Use:
-
-    var parse = require('bennu').parse;
-    var text = require('bennu').text;
-    
-    
-    var aOrB = parse.either(
-        text.character('a'),
-        text.character('b'));
-    
-    parse.run(aOrB, 'b'); // 'b'
-
-## With AMD ##
-Include any AMD style module loader and load Bennu:
-
-    requirejs.config({
-        paths: {
-            'bennu': './dist',
-            'nu-stream': './dependencies/nu/dist',
-            'seshet': './dependencies/seshet/lib/seshet'
-        }
-    });
-    require(['bennu/parse'], function(parse) {
-        ...
-    });
-
-
-## Modules ##
-All files live in the top level 'parse' module.
-
-### lib/parse - 'parse/parse'
-Core functionality. Defines core parsers and data structures for creating and
-running parsers.
-
-### lib/text - 'parse/text'
-Parsers for working specifically with text.
-
-### lib/lang - 'parse/lang'
-Combinatory parsers for ordering parsers, like found in a language.
-
-### lib/incremental - 'parse/incremental'
-Running parsers incrementally.
-
-
-## Fantasy Land
-<a href="https://github.com/fantasyland/fantasy-land">
-    <img src="https://raw.github.com/fantasyland/fantasy-land/master/logo.png" align="right" width="82px" height="82px" alt="Fantasy Land logo" />
-</a>
-
-Bennu parsers implement [Fantasy Land's][fs] monad, applicative, monoid and chain interfaces.
-
-This can be used to directly `.`  chain parsers instead of nested function calls:
 
 ```
-var p = digit
-     .chain(\x ->
-          always(parseInt(x)))
-    .chain(\x->
-        always(x + 5))
-    .chain(\x->
-        always(x / 2));
-
-run(p, '3'); // 4
+$ npm install apep
 ```
-
-
-# Code #
-Parse.js is written in Khepri. [Khepri][khepri] is an ECMAScript language
-focused on functional programming that compiles to Javascript.
-The `dist` directory contains the generated js library while the Khepri sources
-are in `lib` directory.
 
 [documentation]: https://github.com/mattbierner/bennu/wiki
 [CombinatorialParsers]: http://en.wikipedia.org/wiki/Parser_combinator
