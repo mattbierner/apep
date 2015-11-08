@@ -16,6 +16,8 @@ var walker = require('walker-sample');
 
 var arrayMap = Function.prototype.call.bind(Array.prototype.map);
 
+var defaultRandom = Math.random;
+
 /**
     Value state pair
 */
@@ -43,7 +45,7 @@ var State = function State(random, vars, ud) {
     };
 };
 
-State.empty = State(Math.random, {}, null);
+State.empty = State(defaultRandom, {}, null);
 
 State.setUd = function (s, ud) {
     return State(s.random, s.vars, ud);
@@ -432,9 +434,11 @@ var setUd = exports.setUd = function setUd(ud) {
     @param g Generator.
     @param ud Optional user data threaded through the generator's states.
     @param r Random number generator.
+    
+    Returns a Javascript iterator.
 */
 var begin = exports.begin = regeneratorRuntime.mark(function begin(g, ud) {
-    var random = arguments.length <= 2 || arguments[2] === undefined ? Math.random : arguments[2];
+    var random = arguments.length <= 2 || arguments[2] === undefined ? defaultRandom : arguments[2];
     var state, r;
     return regeneratorRuntime.wrap(function begin$(_context) {
         while (1) switch (_context.prev = _context.next) {
@@ -463,6 +467,20 @@ var begin = exports.begin = regeneratorRuntime.mark(function begin(g, ud) {
     }, begin, this);
 });
 
+Generador.prototype.begin = regeneratorRuntime.mark(function _callee(ud) {
+    var random = arguments.length <= 1 || arguments[1] === undefined ? defaultRandom : arguments[1];
+    return regeneratorRuntime.wrap(function _callee$(_context2) {
+        while (1) switch (_context2.prev = _context2.next) {
+            case 0:
+                return _context2.delegateYield(begin(this, ud, random), 't0', 1);
+
+            case 1:
+            case 'end':
+                return _context2.stop();
+        }
+    }, _callee, this);
+});
+
 /**
     Left fold over a generator.
     
@@ -473,7 +491,7 @@ var begin = exports.begin = regeneratorRuntime.mark(function begin(g, ud) {
     @param r Random number generator.
 */
 var fold = exports.fold = function fold(f, z, g, ud) {
-    var random = arguments.length <= 4 || arguments[4] === undefined ? Math.random : arguments[4];
+    var random = arguments.length <= 4 || arguments[4] === undefined ? defaultRandom : arguments[4];
     var _iteratorNormalCompletion = true;
     var _didIteratorError = false;
     var _iteratorError = undefined;
@@ -502,6 +520,11 @@ var fold = exports.fold = function fold(f, z, g, ud) {
     return z;
 };
 
+Generador.prototype.fold = function (f, z, ud) {
+    var random = arguments.length <= 3 || arguments[3] === undefined ? defaultRandom : arguments[3];
+    return fold(f, z, undefined, ud, random);
+};
+
 /**
     Run a generator to completion, combining results into a string.
     
@@ -510,4 +533,9 @@ var fold = exports.fold = function fold(f, z, g, ud) {
 var run = exports.run = fold.bind(null, function (p, c) {
     return p + c;
 }, '');
+
+Generador.prototype.run = function (ud) {
+    var random = arguments.length <= 1 || arguments[1] === undefined ? defaultRandom : arguments[1];
+    return run(undefined, ud, random);
+};
 //# sourceMappingURL=index.js.map

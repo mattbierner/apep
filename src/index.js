@@ -8,6 +8,8 @@ const walker = require('walker-sample');
 
 const arrayMap = Function.prototype.call.bind(Array.prototype.map);
 
+const defaultRandom = Math.random;
+
 /**
     Value state pair
 */
@@ -31,7 +33,7 @@ const State = (random, vars, ud) => ({
     'ud': ud
 });
 
-State.empty = State(Math.random, {}, null);
+State.empty = State(defaultRandom, {}, null);
 
 State.setUd = (s, ud) =>
     State(s.random, s.vars, ud);
@@ -344,11 +346,17 @@ export const setUd = ud =>
     @param g Generator.
     @param ud Optional user data threaded through the generator's states.
     @param r Random number generator.
+    
+    Returns a Javascript iterator.
 */
-export const begin = function*(g, ud, random = Math.random) {
+export const begin = function*(g, ud, random = defaultRandom) {
     const state = State.setRandom(State.setUd(State.empty, ud), random);
     for (let r = execute(g, state); r.rest; r = r.rest()) 
         yield r.first.x;
+};
+
+Generador.prototype.begin = function*(ud, random = defaultRandom) {
+    yield* begin(this, ud, random);
 };
 
 /**
@@ -360,11 +368,14 @@ export const begin = function*(g, ud, random = Math.random) {
     @param ud Optional user data threaded through the generator's states.
     @param r Random number generator.
 */
-export const fold = (f, z, g, ud, random = Math.random) => {
+export const fold = (f, z, g, ud, random = defaultRandom) => {
     for (const x of begin(g, ud, random))
         z = f(z, x);
     return z;
 };
+
+Generador.prototype.fold = (f, z, ud, random = defaultRandom) =>
+    fold(f, z, this, ud, random);
 
 /**
     Run a generator to completion, combining results into a string.
@@ -372,3 +383,6 @@ export const fold = (f, z, g, ud, random = Math.random) => {
     @see exec
 */
 export const run = fold.bind(null, (p, c) => p + c, '');
+
+Generador.prototype.run = (ud, random = defaultRandom) =>
+    run(this, ud, random);
