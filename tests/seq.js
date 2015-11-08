@@ -17,6 +17,9 @@ describe('seq', () => {
     it('Should wrap non generators parameters as strings', () => {
         const p = pep.begin(pep.seq(1, "abc", false));
         assert.deepEqual(['1', 'abc', 'false'], Array.from(p));
+        
+        const p2 = pep.begin(pep.seq(1));
+        assert.deepEqual(['1'], Array.from(p2));
     });
     
     it('Should wrap not wrap literal values', () => {

@@ -191,7 +191,7 @@ const next = (a, b) => {
         seq('a', g1, 3) === seq(str('a'), g1, str(3))
 */
 export const seq = (...generators) =>
-    generators.reduceRight((p, c) => next(c, p));
+    generators.reduceRight((p, c) => next(c, p), empty);
 
 Generador.prototype.seq = function(...generators) {
     return seq(this, ...generators);
@@ -234,7 +234,40 @@ export const map = (p, f) =>
 Generador.prototype.map = function(f) {
     return map(this, f);
 };
-  
+
+/**
+    Combine the yield results of 1 or more generators.
+    
+    @param f Accumulate function. Takes accumulated value and current value.
+    @param z Initial value.
+    @param generators One or more generators to combine.
+*/
+export const combine = (f, z, ...generators) => {
+    const g = seq(...generators);
+    return new Generador(s => {
+        let r = execute(g, s);
+        let lz = z;
+        while (r && r.rest) {
+            lz = f(lz, r.first.x);
+            r = r.rest();
+        }
+        return Yield(Pair(lz, r.first), () => Done(r.first));
+    });
+};
+
+Generador.prototype.combine = function(f, z, ...generators) {
+    return combine(f, z, this, ...generators);
+};
+
+/**
+    Combine the yielded results of generators into a single string result.
+*/
+export const join = combine.bind(null, add, '');
+
+Generador.prototype.combine = function(...generators) {
+    return join(this, ...generators);
+};
+
 /* Choice
  ******************************************************************************/
 /**
@@ -267,19 +300,7 @@ export const choice = (...elements) =>
 /**
     Generator that optionally produces a value.
 */
-export const opt = choice.bind(null, empty);
-
-/* Iteration
- ******************************************************************************/
-
-/**
-    Run a generator zero or more times.
-
-    @param g Generator
-    @param prob At each step, what is the probability that `g` is run.
-        1 means that `g` is run infinity, while 0 means that `g` is never run.
-*/
-export const many = (g, prob = 0.5) => {
+export const opt = (g, prob = 0.5) => {
     if (prob > 1 || prob < 0) {
         throw {
             'name': "ManyRangeError",
@@ -288,14 +309,23 @@ export const many = (g, prob = 0.5) => {
     }
     if (prob === 0)
         return empty;
-    else if (prob === 1) {
-        let self;
-        return self = seq(g, declare(() => self));
-    }
-    let self;
-    return self = weightedChoice([
-        [prob, seq(g, declare(() => self))],
-        [1 - prob, empty]]);
+    else if (prob === 1) 
+        return g;
+    return weightedChoice([[prob, g], [1 - prob, empty]]);
+};
+    
+/* Iteration
+ ******************************************************************************/
+/**
+    Run a generator zero or more times.
+
+    @param g Generator
+    @param prob At each step, what is the probability that `g` is run.
+        1 means that `g` is run infinity, while 0 means that `g` is never run.
+*/
+export const many = (g, prob = 0.5) => {
+    let self; 
+    return self = opt(seq(g, declare(() => self)), prob);
 };
 
 /**

@@ -225,7 +225,7 @@ var seq = exports.seq = function seq() {
 
     return generators.reduceRight(function (p, c) {
         return next(c, p);
-    });
+    }, empty);
 };
 
 Generador.prototype.seq = function () {
@@ -288,6 +288,53 @@ Generador.prototype.map = function (f) {
     return map(this, f);
 };
 
+/**
+    Combine the yield results of 1 or more generators.
+    
+    @param f Accumulate function. Takes accumulated value and current value.
+    @param z Initial value.
+    @param generators One or more generators to combine.
+*/
+var combine = exports.combine = function combine(f, z) {
+    for (var _len3 = arguments.length, generators = Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
+        generators[_key3 - 2] = arguments[_key3];
+    }
+
+    var g = seq.apply(undefined, generators);
+    return new Generador(function (s) {
+        var r = execute(g, s);
+        var lz = z;
+        while (r && r.rest) {
+            lz = f(lz, r.first.x);
+            r = r.rest();
+        }
+        return Yield(Pair(lz, r.first), function () {
+            return Done(r.first);
+        });
+    });
+};
+
+Generador.prototype.combine = function (f, z) {
+    for (var _len4 = arguments.length, generators = Array(_len4 > 2 ? _len4 - 2 : 0), _key4 = 2; _key4 < _len4; _key4++) {
+        generators[_key4 - 2] = arguments[_key4];
+    }
+
+    return combine.apply(undefined, [f, z, this].concat(generators));
+};
+
+/**
+    Combine the yielded results of generators into a single string result.
+*/
+var join = exports.join = combine.bind(null, add, '');
+
+Generador.prototype.combine = function () {
+    for (var _len5 = arguments.length, generators = Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
+        generators[_key5] = arguments[_key5];
+    }
+
+    return join.apply(undefined, [this].concat(generators));
+};
+
 /* Choice
  ******************************************************************************/
 /**
@@ -321,8 +368,8 @@ var choicea = exports.choicea = function choicea(elements) {
      @see choicea
 */
 var choice = exports.choice = function choice() {
-    for (var _len3 = arguments.length, elements = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-        elements[_key3] = arguments[_key3];
+    for (var _len6 = arguments.length, elements = Array(_len6), _key6 = 0; _key6 < _len6; _key6++) {
+        elements[_key6] = arguments[_key6];
     }
 
     return choicea(elements);
@@ -331,11 +378,21 @@ var choice = exports.choice = function choice() {
 /**
     Generator that optionally produces a value.
 */
-var opt = exports.opt = choice.bind(null, empty);
+var opt = exports.opt = function opt(g) {
+    var prob = arguments.length <= 1 || arguments[1] === undefined ? 0.5 : arguments[1];
+
+    if (prob > 1 || prob < 0) {
+        throw {
+            'name': "ManyRangeError",
+            'message': "Probability must be between [0, 1]"
+        };
+    }
+    if (prob === 0) return empty;else if (prob === 1) return g;
+    return weightedChoice([[prob, g], [1 - prob, empty]]);
+};
 
 /* Iteration
  ******************************************************************************/
-
 /**
     Run a generator zero or more times.
 
@@ -346,28 +403,10 @@ var opt = exports.opt = choice.bind(null, empty);
 var many = exports.many = function many(g) {
     var prob = arguments.length <= 1 || arguments[1] === undefined ? 0.5 : arguments[1];
 
-    if (prob > 1 || prob < 0) {
-        throw {
-            'name': "ManyRangeError",
-            'message': "Probability must be between [0, 1]"
-        };
-    }
-    if (prob === 0) return empty;else if (prob === 1) {
-        var _ret2 = (function () {
-            var self = undefined;
-            return {
-                v: self = seq(g, declare(function () {
-                    return self;
-                }))
-            };
-        })();
-
-        if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
-    }
     var self = undefined;
-    return self = weightedChoice([[prob, seq(g, declare(function () {
+    return self = opt(seq(g, declare(function () {
         return self;
-    }))], [1 - prob, empty]]);
+    })), prob);
 };
 
 /**
