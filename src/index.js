@@ -8,6 +8,8 @@ const walker = require('walker-sample');
 
 const arrayMap = Function.prototype.call.bind(Array.prototype.map);
 
+const add = (p, c) => p + c;
+
 const defaultRandom = Math.random;
 
 /**
@@ -20,8 +22,8 @@ const Pair = (x, s) => ({
 
 /**
 */
-const Generador = function(run) {
-    this.run = run;
+const Generador = function(impl) {
+    this._impl = impl;
 };
 
 /**
@@ -59,7 +61,7 @@ State.setVar = (s, name, value) => {
     Run a given generator.
 */
 export const execute = (p, s) => {
-    return p.run(s);
+    return p._impl(s);
 };
 
 /**
@@ -124,16 +126,16 @@ export const declare = (def) => {
 
 const Yield = (first, rest) => ({
     first: first,
-    rest: rest,
-    '_yield': true
+    rest: rest
 });
 
 const Done = (first) => ({
     'first': first,
-    'rest': null,
-    '_yield': true
+    'rest': null
 });
-
+        
+/* Value Generators
+ ******************************************************************************/
 /**
     Generate a literal value without any transformations applied.
 */
@@ -162,11 +164,13 @@ export const str = function(x) {
 */
 export const wrap = (x) =>
     x instanceof Generador ? x : str(x);
-
+        
+/* Basic Combinators
+ ******************************************************************************/
 /**
     Run `a` and then `run b`.
 */
-export const next = (a, b) => {
+const next = (a, b) => {
     a = wrap(a);
     b = wrap(b);
     const loop = (r) => {
@@ -184,10 +188,14 @@ export const next = (a, b) => {
     
     Literal values are wrapped and converted to strings:
     
-        gen.seq('a', g1, 3) === gen.seq(gen.str('a'), g1, gen.str(3))
+        seq('a', g1, 3) === seq(str('a'), g1, str(3))
 */
-export const seq = (...elements) =>
-    elements.reduceRight((p, c) => next(c, p));
+export const seq = (...generators) =>
+    generators.reduceRight((p, c) => next(c, p));
+
+Generador.prototype.seq = function(...generators) {
+    return seq(this, ...generators);
+};
 
 /**
     Map function `f` over each element produced by `p`.
@@ -211,14 +219,22 @@ export const chain = (p, f) => {
 
     return new Generador(s =>
         loop(execute(p, s)));
-}
+};
+
+Generador.prototype.chain = function(f) {
+    return chain(this, f);
+};
 
 /**
     Map function `f` over each element produced by `p`.
 */
 export const map = (p, f) =>
     chain(p, x => lit(f(x)));
-        
+    
+Generador.prototype.map = function(f) {
+    return map(this, f);
+};
+  
 /* Choice
  ******************************************************************************/
 /**
@@ -369,20 +385,22 @@ Generador.prototype.begin = function*(ud, random = defaultRandom) {
     @param r Random number generator.
 */
 export const fold = (f, z, g, ud, random = defaultRandom) => {
-    for (const x of begin(g, ud, random))
+    for (const x of begin(g, ud, random)) {
         z = f(z, x);
+    }
     return z;
 };
 
-Generador.prototype.fold = (f, z, ud, random = defaultRandom) =>
-    fold(f, z, this, ud, random);
+Generador.prototype.fold = fold.bind(null, add, '');
 
 /**
     Run a generator to completion, combining results into a string.
     
     @see exec
 */
-export const run = fold.bind(null, (p, c) => p + c, '');
+export const run = (g, ud, random = defaultRandom) =>
+    fold(add, '', g, ud, random);
 
-Generador.prototype.run = (ud, random = defaultRandom) =>
-    run(this, ud, random);
+Generador.prototype.run = function(ud, random = defaultRandom) {
+    return run(this, ud, random);
+};
