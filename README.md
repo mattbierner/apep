@@ -69,7 +69,7 @@ If you've used Apep to generate something awesome, please submit a pull request 
 ## Contributing
 Any contributions to Apep are welcome. If you come across any problems, please [open an issue](https://github.com/mattbierner/apep/issues).
 
-Apep uses gulp and Babel for building. After forking the repo to your local machine, run the following to get started building:
+Apep uses gulp and Babel for building. After forking the repo, run the following to get started building:
 
 ```sh
 $ npm install

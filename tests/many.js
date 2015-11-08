@@ -6,7 +6,7 @@ const assert = require('assert');
 describe('Many', () => {
 
     it('Zero chance many returns nothing', () => {
-        const p = pep.exec(pep.many(pep.str(4), 0.0));
+        const p = pep.begin(pep.many(pep.str(4), 0.0));
         const n = Array.from(p);
         assert.strictEqual(0, n.length);
     });
@@ -15,7 +15,7 @@ describe('Many', () => {
         const p = pep.many(pep.str(4), 1.0);
         var i = 0;
         let x;
-        for (let z of pep.exec(p)) {
+        for (let z of pep.begin(p)) {
             if (++i >= 500)  {
                 x = z;
                 break

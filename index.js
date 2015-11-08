@@ -9,7 +9,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 /**
     APEN
     
-    Dada engine inspired library.
+    Dada engine inspired library for random text generation.
 */
 require("babel-polyfill");
 var walker = require('walker-sample');
@@ -17,7 +17,7 @@ var walker = require('walker-sample');
 var arrayMap = Function.prototype.call.bind(Array.prototype.map);
 
 /**
-    Pac
+    Value state pair
 */
 var Pair = function Pair(x, s) {
     return {
@@ -433,44 +433,34 @@ var setUd = exports.setUd = function setUd(ud) {
     @param ud Optional user data threaded through the generator's states.
     @param r Random number generator.
 */
-var exec = exports.exec = regeneratorRuntime.mark(function exec(g, ud) {
+var begin = exports.begin = regeneratorRuntime.mark(function begin(g, ud) {
     var random = arguments.length <= 2 || arguments[2] === undefined ? Math.random : arguments[2];
     var state, r;
-    return regeneratorRuntime.wrap(function exec$(_context) {
+    return regeneratorRuntime.wrap(function begin$(_context) {
         while (1) switch (_context.prev = _context.next) {
             case 0:
                 state = State.setRandom(State.setUd(State.empty, ud), random);
-                r = execute(g, state, function (x, s) {
-                    return x;
-                });
+                r = execute(g, state);
 
             case 2:
-                if (!true) {
-                    _context.next = 10;
+                if (!r.rest) {
+                    _context.next = 8;
                     break;
                 }
 
-                if (!(!r._yield || !r.rest)) {
-                    _context.next = 5;
-                    break;
-                }
-
-                return _context.abrupt('return');
-
-            case 5:
-                _context.next = 7;
+                _context.next = 5;
                 return r.first.x;
 
-            case 7:
+            case 5:
                 r = r.rest();
                 _context.next = 2;
                 break;
 
-            case 10:
+            case 8:
             case 'end':
                 return _context.stop();
         }
-    }, exec, this);
+    }, begin, this);
 });
 
 /**
@@ -489,7 +479,7 @@ var fold = exports.fold = function fold(f, z, g, ud) {
     var _iteratorError = undefined;
 
     try {
-        for (var _iterator = exec(g, ud, random)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+        for (var _iterator = begin(g, ud, random)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
             var x = _step.value;
 
             z = f(z, x);

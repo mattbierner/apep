@@ -1,16 +1,15 @@
 /**
     APEN
     
-    Dada engine inspired library.
+    Dada engine inspired library for random text generation.
 */
 require("babel-polyfill");
 const walker = require('walker-sample');
 
 const arrayMap = Function.prototype.call.bind(Array.prototype.map);
 
-
 /**
-    Pac
+    Value state pair
 */
 const Pair = (x, s) => ({
     'x': x,
@@ -346,15 +345,10 @@ export const setUd = ud =>
     @param ud Optional user data threaded through the generator's states.
     @param r Random number generator.
 */
-export const exec = function*(g, ud, random = Math.random) {
-    var state = State.setRandom(State.setUd(State.empty, ud), random);
-    let r = execute(g, state, (x, s) => (x));    
-    while (true) { 
-        if (!r._yield || !r.rest)
-            return;
+export const begin = function*(g, ud, random = Math.random) {
+    const state = State.setRandom(State.setUd(State.empty, ud), random);
+    for (let r = execute(g, state); r.rest; r = r.rest()) 
         yield r.first.x;
-        r = r.rest();
-    }
 };
 
 /**
@@ -367,7 +361,7 @@ export const exec = function*(g, ud, random = Math.random) {
     @param r Random number generator.
 */
 export const fold = (f, z, g, ud, random = Math.random) => {
-    for (const x of exec(g, ud, random))
+    for (const x of begin(g, ud, random))
         z = f(z, x);
     return z;
 };

@@ -5,7 +5,7 @@ const assert = require('assert');
 describe('map', () => {
 
     it('Should output same value with identity function', () => {
-        const p = pep.exec(
+        const p = pep.begin(
             pep.map(pep.str(4), (x) =>  x));
         const n = Array.from(p);
         assert.strictEqual(1, n.length);
@@ -14,7 +14,7 @@ describe('map', () => {
 
 
     it('Should map over every element in a sequence', () => {
-        const p = pep.exec(
+        const p = pep.begin(
             pep.map(pep.seq(pep.lit(1), pep.lit(2), pep.lit(3)),
             (x) => x * x));
         const n = Array.from(p);
@@ -22,7 +22,7 @@ describe('map', () => {
     });
     
     it('Should map over every element in a sequence without leaking', () => {
-        const p = pep.exec(
+        const p = pep.begin(
             pep.seq(
                 pep.lit(5),
                 pep.map(

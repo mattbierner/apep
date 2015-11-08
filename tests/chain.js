@@ -13,7 +13,7 @@ describe('chain', () => {
             pep.seq(pep.lit(1), pep.lit(2), pep.lit(3)),
             x => pep.seq(x, x));
             
-        const n = Array.from(pep.exec(p));
+        const n = Array.from(pep.begin(p));
         assert.deepEqual([1, 1, 2, 2, 3, 3], n);
     });
 });
