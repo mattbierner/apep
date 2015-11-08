@@ -137,7 +137,7 @@ const Done = (first) => ({
     Generate a literal value without any transformations applied.
 */
 export const lit = (x) =>
-    new Generador((s) =>
+    new Generador(s =>
         Yield(Pair(x, s), _ => Done(s)))
  
 /**
@@ -288,6 +288,54 @@ export const many = (g, prob = 0.5) => {
 */
 export const many1 = (g, prob = 0.5) =>
     seq(g, many(g, prob));
+
+/* State
+ ******************************************************************************/
+const getState = new Generador(s =>
+    Yield(Pair(s, s), _ => Done(s)));
+
+const modifyState = f =>
+    new Generador(s => Done(f(s)));
+
+/**
+    Lookup a stored variable.
+    
+    @param name Key of the var.
+    @param def Value returned if the variable does not exist.
+*/
+export const get = (name, def = '') =>
+    map(getState, s => State.getVar(s, name, def));
+
+/**
+    Lookup a stored variable.
+    
+    @param name Key of the var.
+    @param def Value returned if the variable does not exist.
+*/
+export const set = (name, value) => 
+    modifyState(s =>
+        State.setVar(s, name, value));
+        
+/**
+    Return the current user data.
+*/
+export const getUd = map(getState, s => s.ud);
+
+/**
+    Update the user data with function `f`.
+    
+    Does not yield any value.
+*/
+export const modifyUd = f =>
+    modifyState(s => State.setUd(s, f(s.ud)));
+
+/**
+    Set the current user data.
+    
+    Does not yield any value.
+*/
+export const setUd = ud =>
+    modifyUd(_ => ud);
 
 /* Execution
  ******************************************************************************/

@@ -356,6 +356,74 @@ var many1 = exports.many1 = function many1(g) {
     return seq(g, many(g, prob));
 };
 
+/* State
+ ******************************************************************************/
+var getState = new Generador(function (s) {
+    return Yield(Pair(s, s), function (_) {
+        return Done(s);
+    });
+});
+
+var modifyState = function modifyState(f) {
+    return new Generador(function (s) {
+        return Done(f(s));
+    });
+};
+
+/**
+    Lookup a stored variable.
+    
+    @param name Key of the var.
+    @param def Value returned if the variable does not exist.
+*/
+var get = exports.get = function get(name) {
+    var def = arguments.length <= 1 || arguments[1] === undefined ? '' : arguments[1];
+    return map(getState, function (s) {
+        return State.getVar(s, name, def);
+    });
+};
+
+/**
+    Lookup a stored variable.
+    
+    @param name Key of the var.
+    @param def Value returned if the variable does not exist.
+*/
+var set = exports.set = function set(name, value) {
+    return modifyState(function (s) {
+        return State.setVar(s, name, value);
+    });
+};
+
+/**
+    Return the current user data.
+*/
+var getUd = exports.getUd = map(getState, function (s) {
+    return s.ud;
+});
+
+/**
+    Update the user data with function `f`.
+    
+    Does not yield any value.
+*/
+var modifyUd = exports.modifyUd = function modifyUd(f) {
+    return modifyState(function (s) {
+        return State.setUd(s, f(s.ud));
+    });
+};
+
+/**
+    Set the current user data.
+    
+    Does not yield any value.
+*/
+var setUd = exports.setUd = function setUd(ud) {
+    return modifyUd(function (_) {
+        return ud;
+    });
+};
+
 /* Execution
  ******************************************************************************/
 /**
