@@ -162,9 +162,7 @@ var declare = exports.declare = function declare(def) {
 */
 var lit = exports.lit = function lit(x) {
     return new Generador(function (s) {
-        return Yield(Pair(x, s), function (_) {
-            return Done(s);
-        });
+        return Yield(Pair(x, s), Done);
     });
 };
 
@@ -200,8 +198,8 @@ var next = function next(a, b) {
     a = wrap(a);
     b = wrap(b);
     var loop = function loop(r) {
-        if (r && r.rest) return Yield(r.first, function () {
-            return loop(r.rest());
+        if (r && r.rest) return Yield(r.first, function (s) {
+            return loop(r.rest(s));
         });
         return execute(b, r.first);
     };
@@ -245,12 +243,12 @@ var chain = exports.chain = function chain(p, f) {
             var _ret = (function () {
                 var r2 = execute(f(r.first.x), r.first.s);
                 if (r2 && r2.rest) return {
-                        v: Yield(r2.first, function () {
-                            return loopInner(r2.rest(), r);
+                        v: Yield(r2.first, function (s) {
+                            return loopInner(r2.rest(s), r);
                         })
                     };
                 return {
-                    v: loop(r.rest())
+                    v: loop(r.rest(r2.first))
                 };
             })();
 
@@ -260,10 +258,10 @@ var chain = exports.chain = function chain(p, f) {
     };
 
     var loopInner = function loopInner(r, r2) {
-        if (r && r.rest) return Yield(r.first, function () {
-            return loopInner(r.rest(), r2);
+        if (r && r.rest) return Yield(r.first, function (s) {
+            return loopInner(r.rest(s), r2);
         });
-        return loop(r2.rest());
+        return loop(r2.rest(r.first));
     };
 
     return new Generador(function (s) {
@@ -308,9 +306,7 @@ var combine = exports.combine = function combine(f, z) {
             lz = f(lz, r.first.x);
             r = r.rest();
         }
-        return Yield(Pair(lz, r.first), function () {
-            return Done(r.first);
-        });
+        return Yield(Pair(lz, r.first), Done);
     });
 };
 
@@ -327,7 +323,7 @@ Generador.prototype.combine = function (f, z) {
 */
 var join = exports.join = combine.bind(null, add, '');
 
-Generador.prototype.combine = function () {
+Generador.prototype.join = function () {
     for (var _len5 = arguments.length, generators = Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
         generators[_key5] = arguments[_key5];
     }
@@ -532,19 +528,20 @@ var begin = exports.begin = regeneratorRuntime.mark(function begin(g, ud) {
 
             case 2:
                 if (!r.rest) {
-                    _context.next = 8;
+                    _context.next = 9;
                     break;
                 }
 
-                _context.next = 5;
+                state = r.first.s;
+                _context.next = 6;
                 return r.first.x;
 
-            case 5:
-                r = r.rest();
+            case 6:
+                r = r.rest(state);
                 _context.next = 2;
                 break;
 
-            case 8:
+            case 9:
             case 'end':
                 return _context.stop();
         }
@@ -604,7 +601,11 @@ var fold = exports.fold = function fold(f, z, g, ud) {
     return z;
 };
 
-Generador.prototype.fold = fold.bind(null, add, '');
+Generador.prototype.fold = function (f, z, ud) {
+    var random = arguments.length <= 3 || arguments[3] === undefined ? defaultRandom : arguments[3];
+
+    return fold(f, z, this, ud, random);
+};
 
 /**
     Run a generator to completion, combining results into a string.

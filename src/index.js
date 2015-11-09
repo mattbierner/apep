@@ -141,7 +141,7 @@ export const declare = (def) => {
 */
 export const lit = (x) =>
     new Generador(s =>
-        Yield(Pair(x, s), _ => Done(s)))
+        Yield(Pair(x, s), Done))
  
 /**
     Empty value generator.
@@ -175,7 +175,7 @@ const next = (a, b) => {
     b = wrap(b);
     const loop = (r) => {
         if (r && r.rest)
-            return Yield(r.first, () => loop(r.rest()));
+            return Yield(r.first, (s) => loop(r.rest(s)));
         return execute(b, r.first);
     };
 
@@ -205,16 +205,16 @@ export const chain = (p, f) => {
         if (r && r.rest) {
             const r2 = execute(f(r.first.x), r.first.s);
             if (r2 && r2.rest)
-                return Yield(r2.first, () => loopInner(r2.rest(), r));
-            return loop(r.rest());
+                return Yield(r2.first, (s) => loopInner(r2.rest(s), r));
+            return loop(r.rest(r2.first));
         }
         return r;
     };
     
     const loopInner = (r, r2) => {
         if (r && r.rest)
-            return Yield(r.first, () => loopInner(r.rest(), r2));
-        return loop(r2.rest());
+            return Yield(r.first, (s) => loopInner(r.rest(s), r2));
+        return loop(r2.rest(r.first));
     };
 
     return new Generador(s =>
@@ -251,7 +251,7 @@ export const combine = (f, z, ...generators) => {
             lz = f(lz, r.first.x);
             r = r.rest();
         }
-        return Yield(Pair(lz, r.first), () => Done(r.first));
+        return Yield(Pair(lz, r.first), Done);
     });
 };
 
@@ -264,7 +264,7 @@ Generador.prototype.combine = function(f, z, ...generators) {
 */
 export const join = combine.bind(null, add, '');
 
-Generador.prototype.combine = function(...generators) {
+Generador.prototype.join = function(...generators) {
     return join(this, ...generators);
 };
 
@@ -413,9 +413,11 @@ export const setUd = ud =>
     Returns a Javascript iterator.
 */
 export const begin = function*(g, ud, random = defaultRandom) {
-    const state = State.setRandom(State.setUd(State.empty, ud), random);
-    for (let r = execute(g, state); r.rest; r = r.rest()) 
+    let state = State.setRandom(State.setUd(State.empty, ud), random);
+    for (let r = execute(g, state); r.rest; r = r.rest(state)) {
+        state = r.first.s;
         yield r.first.x;
+    }
 };
 
 Generador.prototype.begin = function*(ud, random = defaultRandom) {
@@ -438,7 +440,9 @@ export const fold = (f, z, g, ud, random = defaultRandom) => {
     return z;
 };
 
-Generador.prototype.fold = fold.bind(null, add, '');
+Generador.prototype.fold = function(f, z, ud, random = defaultRandom) {
+    return fold(f, z, this, ud, random);
+};
 
 /**
     Run a generator to completion, combining results into a string.

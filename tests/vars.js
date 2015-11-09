@@ -23,5 +23,13 @@ describe('Vars', function () {
             pep.get('x', ''), 'a', pep.set('x', 3), 'b', pep.get('x'), 'c');
         assert.strictEqual('ab3c', pep.run(p));
     });
+    
+       
+    it('work properly in chain.', function () {
+        const p = pep.seq(pep.set('a', 3), 'b', 'c')
+            .chain(x => pep.seq(x, pep.set('a', x)))
+            .seq(pep.get('a'));
+        assert.strictEqual('bcc', pep.run(p));
+    });
 });
 
