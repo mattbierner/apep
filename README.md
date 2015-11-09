@@ -49,7 +49,7 @@ ARG!!!! The IPv6 is on fire!
 GROK! He's seg faulting the NSA!
 ```
 
-Apep provides a small set of combinators, from which fairly complex grammers can be constructed. All grammers are specified directly in Javascript.
+Apep provides a small set of combinators, from which fairly complex grammars can be constructed. All grammars are specified directly in Javascript.
 
 ## Usage
 
