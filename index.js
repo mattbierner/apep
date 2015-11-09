@@ -304,7 +304,7 @@ var combine = exports.combine = function combine(f, z) {
         var lz = z;
         while (r && r.rest) {
             lz = f(lz, r.first.x);
-            r = r.rest();
+            r = r.rest(r.first.s);
         }
         return Yield(Pair(lz, r.first), Done);
     });
