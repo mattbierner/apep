@@ -1,6 +1,6 @@
 {
     "name": "apep",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Generate random text from a grammar.",
     "author": "Matt Bierner",
     "license": "MIT",
@@ -16,10 +16,10 @@
     "main": "index.js",
    
     "dependencies": {
+        "babel-polyfill": "^6.0.16",
         "walker-sample": "^0.0.0"    
     },
     "devDependencies": {
-        "babel-polyfill": "^6.0.16",
         "babel-preset-es2015": "^6.1.0",
         "gulp": "^3.9.0",
         "gulp-babel": "^6.1.0",
