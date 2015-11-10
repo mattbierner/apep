@@ -11,9 +11,16 @@ describe('choice', () => {
         assert.strictEqual('4', n[0]);
     });
 
-    it('Arguments are wrapped', () => {
+    it('Should wrap non generator arguments', () => {
         const p = pep.run(pep.choice('a', 'b', 'c'), null, () => 0.1);
         assert.strictEqual('a', p);
+    });
+    
+    it('Should wrap arrays as sequences', () => {
+        const p = pep.choice(['a', 3], ['c', 'd'], ['e', 'f']);
+        assert.deepStrictEqual(
+            ['a', '3'],
+            Array.from(p.begin(null, () => 0.1)));
     });
 
     it('Multiple choice is split around 0.5', () => {

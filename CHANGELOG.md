@@ -1,5 +1,11 @@
 # ChangeLog #
 
+## 1.1.0 - Nov 10, 2015
+* Added `seqa` generator.
+** Same as `seq` but takes an array of generators.
+* Use array literals to express sequences in grammars:
+** `pep.choice(['a', 3], ['b', 4])` Yields either 'a' then '3', or 'b' then '4'.
+
 ## 1.0.3 - Nov 9, 2015
 * Further perf improvements for `run`.
 

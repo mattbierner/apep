@@ -15,6 +15,6 @@ describe('empty', () => {
     
     it('should be ignored in sequences', () => {
         const p = pep.seq('a', pep.empty, 'c');
-        assert.deepEqual(['a', 'c'], Array.from(p.begin()));
+        assert.deepStrictEqual(['a', 'c'], Array.from(p.begin()));
     });
 });

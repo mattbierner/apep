@@ -159,8 +159,10 @@ export const str = function(x) {
     Convert any literals into string literals.
 */
 export const wrap = (x) =>
-    x instanceof Generador ? x : str(x);
-        
+    x instanceof Generador
+        ?x
+        :Array.isArray(x) ? seqa(x) : str(x);  
+      
 /* Basic Combinators
  ******************************************************************************/
 /**
@@ -180,8 +182,13 @@ const next = (a, b) => {
     
         seq('a', g1, 3) === seq(str('a'), g1, str(3))
 */
-export const seq = (...generators) =>
+export const seqa = (generators) =>
     generators.reduceRight((p, c) => next(c, p), empty);
+
+/**
+    Same as `seqa` but takes values are arguments.
+*/
+export const seq = (...generators) => seqa(generators);
 
 Generador.prototype.seq = function(...generators) {
     return seq(this, ...generators);
@@ -365,7 +372,7 @@ export const modify = (name, f) =>
 /**
     Return the current user data.
 */
-export const getUd= map(getState, s => s.ud);
+export const getUd = map(getState, s => s.ud);
 
 /**
     Update the user data with function `f`.

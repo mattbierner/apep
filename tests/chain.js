@@ -8,7 +8,12 @@ describe('chain', () => {
         assert.strictEqual('8', pep.run(p));
     });
     
-    it('Should return return sequence values', () => {
+    it('Should wrap non generators', () => {
+        const p = pep.chain('abc', x => pep.str(x + x));
+        assert.deepStrictEqual(['abcabc'], Array.from(p.begin()));
+    });
+    
+    it('Should allow returning sequence values', () => {
         const p = pep.chain(pep.lit(2), x => pep.seq(x * 2, x * 4));
         assert.strictEqual('48', pep.run(p));
     });
@@ -16,10 +21,10 @@ describe('chain', () => {
     it('Should chain over each element in sequence', () => {
         const p = pep.chain(
             pep.seq(pep.lit(1), pep.lit(2), pep.lit(3)),
-            x => pep.seq(x, x));
+            x => pep.seq(pep.lit(x), pep.lit(x)));
             
         const n = Array.from(p);
-        assert.deepEqual([1, 1, 2, 2, 3, 3], n);
+        assert.deepStrictEqual([1, 1, 2, 2, 3, 3], n);
     });
     
     it('nested chains', () => {
@@ -27,9 +32,9 @@ describe('chain', () => {
             pep.seq(pep.lit(1), pep.lit(2)),
             x =>
                 pep.seq(pep.lit(x), pep.lit(x))
-                    .chain(x => pep.seq(x, x * 10, x * 100)));
+                    .chain(x => pep.seq(pep.lit(x), pep.lit(x * 10), pep.lit(x * 100))));
         
         const n = Array.from(pep.begin(p));
-        assert.deepEqual([1, 10, 100, 1, 10, 100, 2, 20, 200, 2, 20, 200], n);
+        assert.deepStrictEqual([1, 10, 100, 1, 10, 100, 2, 20, 200, 2, 20, 200], n);
     });
 });

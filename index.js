@@ -182,7 +182,7 @@ var str = exports.str = function str(x) {
     Convert any literals into string literals.
 */
 var wrap = exports.wrap = function wrap(x) {
-    return x instanceof Generador ? x : str(x);
+    return x instanceof Generador ? x : Array.isArray(x) ? seqa(x) : str(x);
 };
 
 /* Basic Combinators
@@ -207,14 +207,21 @@ var next = function next(a, b) {
     
         seq('a', g1, 3) === seq(str('a'), g1, str(3))
 */
+var seqa = exports.seqa = function seqa(generators) {
+    return generators.reduceRight(function (p, c) {
+        return next(c, p);
+    }, empty);
+};
+
+/**
+    Same as `seqa` but takes values are arguments.
+*/
 var seq = exports.seq = function seq() {
     for (var _len = arguments.length, generators = Array(_len), _key = 0; _key < _len; _key++) {
         generators[_key] = arguments[_key];
     }
 
-    return generators.reduceRight(function (p, c) {
-        return next(c, p);
-    }, empty);
+    return seqa(generators);
 };
 
 Generador.prototype.seq = function () {

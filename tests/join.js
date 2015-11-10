@@ -6,18 +6,18 @@ describe('join', () => {
     it('should return empty stringwhen empty', () => {
         const p = pep.join(pep.empty);
         const n = Array.from(p.begin());
-        assert.deepEqual([''], n);
+        assert.deepStrictEqual([''], n);
     });
     
     it('should convert single value to string', () => {
         const p = pep.join(pep.lit(5));
         const n = Array.from(p.begin());
-        assert.deepEqual(['5'], n);
+        assert.deepStrictEqual(['5'], n);
     });
     
     it('should combine left to right', () => {
         const p = pep.join(pep.seq('a', pep.seq('b', 'c'), 'd'));
         const n = Array.from(p.begin());
-        assert.deepEqual(['abcd'], n);
+        assert.deepStrictEqual(['abcd'], n);
     });
 });

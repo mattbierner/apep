@@ -13,7 +13,7 @@ describe('str', () => {
 
     it('Should convert input to string', () => {
         const p = pep.begin(pep.str(5));
-        assert.deepEqual(['5'], Array.from(p));
+        assert.deepStrictEqual(['5'], Array.from(p));
     });
 
     it('Should convert custom object to string', () => {
