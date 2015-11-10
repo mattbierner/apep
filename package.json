@@ -1,6 +1,6 @@
 {
     "name": "apep",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Generate random text from a grammar.",
     "author": "Matt Bierner",
     "license": "MIT",
