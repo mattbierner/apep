@@ -20,6 +20,10 @@ var id = function id(x) {
     return x;
 };
 
+var EOF = function EOF(_) {
+    return null;
+};
+
 var defaultRandom = Math.random;
 
 /**
@@ -386,7 +390,7 @@ var many = exports.many = function many(g) {
 };
 
 /**
-    Run a generator 1 or more times.
+    Run a generator one or more times.
     
     @see many
 */
@@ -487,9 +491,7 @@ var begin = exports.begin = function begin(g, ud) {
     var random = arguments.length <= 2 || arguments[2] === undefined ? defaultRandom : arguments[2];
 
     var state = State.setRandom(State.setUd(State.empty, ud), random);
-    var r = execute(g, state, function () {
-        return null;
-    });
+    var r = execute(g, state, EOF);
     var z = {
         next: function next() {
             if (r && r.rest) {
@@ -528,31 +530,12 @@ Generador.prototype[Symbol.iterator] = function () {
 */
 var fold = exports.fold = function fold(f, z, g, ud) {
     var random = arguments.length <= 4 || arguments[4] === undefined ? defaultRandom : arguments[4];
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
 
-    try {
-        for (var _iterator = begin(g, ud, random)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var x = _step.value;
-
-            z = f(z, x);
-        }
-    } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion && _iterator.return) {
-                _iterator.return();
-            }
-        } finally {
-            if (_didIteratorError) {
-                throw _iteratorError;
-            }
-        }
+    var state = State.setRandom(State.setUd(State.empty, ud), random);
+    for (var r = execute(g, state, EOF); r && r.rest; r = r.rest(state)) {
+        z = f(z, r.first.x);
+        state = r.first.s;
     }
-
     return z;
 };
 

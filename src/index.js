@@ -12,6 +12,8 @@ const add = (p, c) => p + c;
 
 const id = x => x;
 
+const EOF = _ => null;
+
 const defaultRandom = Math.random;
 
 /**
@@ -190,7 +192,7 @@ Generador.prototype.seq = function(...generators) {
 */
 export const chain = (p, f) => {  
     p = wrap(p);
-      
+    
     const loop = (r, k) =>
         r && r.rest 
             ?execute(f(r.first.x), r.first.s, s => loop(r.rest(s), k))
@@ -316,7 +318,7 @@ export const many = (g, prob = 0.5) => {
 };
 
 /**
-    Run a generator 1 or more times.
+    Run a generator one or more times.
     
     @see many
 */
@@ -394,7 +396,7 @@ export const setUd = ud =>
 */
 export const begin = (g, ud, random = defaultRandom) => {
     let state = State.setRandom(State.setUd(State.empty, ud), random);
-    let r = execute(g, state, () => null);
+    let r = execute(g, state, EOF);
     var z = { 
         next: () => {
             if (r && r.rest) {
@@ -428,8 +430,10 @@ Generador.prototype[Symbol.iterator] = function() {
     @param r Random number generator.
 */
 export const fold = (f, z, g, ud, random = defaultRandom) => {
-    for (const x of begin(g, ud, random)) {
-        z = f(z, x);
+    let state = State.setRandom(State.setUd(State.empty, ud), random);
+    for (let r = execute(g, state, EOF); r && r.rest; r = r.rest(state)) {
+        z = f(z, r.first.x);
+        state = r.first.s;
     }
     return z;
 };

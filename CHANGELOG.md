@@ -1,5 +1,8 @@
 # ChangeLog #
 
+## 1.0.3 - Nov 9, 2015
+* Further perf improvements for `run`.
+
 ## 1.0.2 - Nov 9, 2015
 * Perf improvements and internal cleanup.
 * Remove need for babel-polyfill dep.
