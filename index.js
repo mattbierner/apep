@@ -214,7 +214,7 @@ var seqa = exports.seqa = function seqa(generators) {
 };
 
 /**
-    Same as `seqa` but takes values are arguments.
+    Same as `seqa` but takes values as arguments.
 */
 var seq = exports.seq = function seq() {
     for (var _len = arguments.length, generators = Array(_len), _key = 0; _key < _len; _key++) {

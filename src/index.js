@@ -186,7 +186,7 @@ export const seqa = (generators) =>
     generators.reduceRight((p, c) => next(c, p), empty);
 
 /**
-    Same as `seqa` but takes values are arguments.
+    Same as `seqa` but takes values as arguments.
 */
 export const seq = (...generators) => seqa(generators);
 

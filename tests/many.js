@@ -3,17 +3,21 @@
 const pep = require('../index');
 const assert = require('assert');
 
-describe('Many', () => {
+describe('many', () => {
 
-    it('Zero chance many returns nothing', () => {
+    it('Should yield nothing with zero percent chance', () => {
         const p = pep.begin(pep.many(pep.str(4), 0.0));
-        const n = Array.from(p);
-        assert.strictEqual(0, n.length);
+        assert.deepStrictEqual([], Array.from(p));
+    });
+    
+    it('Should wrap generator.', () => {
+        const p = pep.many(4, 1.0);
+        assert.deepStrictEqual('4', p.begin().next().value);
     });
 
-    it('100% chance returns infinite', () => {
+    it('Should run for ever with 100% change', () => {
         const p = pep.many(pep.str(4), 1.0);
-        var i = 0;
+        let i = 0;
         let x;
         for (let z of pep.begin(p)) {
             if (++i >= 500)  {

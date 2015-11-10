@@ -17,7 +17,13 @@ describe('combine', () => {
     
     it('should fold left to right', () => {
         const p = pep.combine((p, c) => [p, c], 'x', pep.seq('a', pep.seq('b', 'c'), 'd'));
-        const n = Array.from(p.begin());
+        const n = Array.from(p);
+        assert.deepStrictEqual([[[[['x', 'a'], 'b'], 'c'], 'd']], n);
+    });
+    
+     it('should wrap generators', () => {
+        const p = pep.combine((p, c) => [p, c], 'x', 'a', 'b', 'c', 'd');
+        const n = Array.from(p);
         assert.deepStrictEqual([[[[['x', 'a'], 'b'], 'c'], 'd']], n);
     });
 });
