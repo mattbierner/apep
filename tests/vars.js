@@ -24,12 +24,11 @@ describe('Vars', function () {
         assert.strictEqual('ab3c', pep.run(p));
     });
     
-       
     it('work properly in chain.', function () {
         const p = pep.seq(pep.set('a', 3), 'b', 'c')
-            .chain(x => pep.seq(x, pep.set('a', x)))
+            .chain(x => pep.seq(x, pep.set('a', x), x))
             .seq(pep.get('a'));
-        assert.strictEqual('bcc', pep.run(p));
+        assert.strictEqual('bbccc', pep.run(p));
     });
 });
 

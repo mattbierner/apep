@@ -16,7 +16,6 @@
     "main": "index.js",
    
     "dependencies": {
-        "babel-polyfill": "^6.0.16",
         "walker-sample": "^0.0.0"    
     },
     "devDependencies": {

@@ -1,17 +1,13 @@
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-
-function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.constructor === Symbol ? "symbol" : typeof obj; }
-
 /**
     APEN
     
     Dada engine inspired library for random text generation.
 */
-require("babel-polyfill");
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 var walker = require('walker-sample');
 
 var arrayMap = Function.prototype.call.bind(Array.prototype.map);
@@ -20,16 +16,17 @@ var add = function add(p, c) {
     return p + c;
 };
 
+var id = function id(x) {
+    return x;
+};
+
 var defaultRandom = Math.random;
 
 /**
     Value state pair
 */
 var Pair = function Pair(x, s) {
-    return {
-        'x': x,
-        's': s
-    };
+    return { x: x, s: s };
 };
 
 /**
@@ -80,18 +77,11 @@ var Yield = function Yield(first, rest) {
     };
 };
 
-var Done = function Done(first) {
-    return {
-        first: first,
-        rest: null
-    };
-};
-
 /**
     Run a given generator.
 */
-var execute = function execute(p, s) {
-    return p._impl(s);
+var execute = function execute(p, s, k) {
+    return p._impl(s, k);
 };
 
 /**
@@ -150,8 +140,8 @@ var execute = function execute(p, s) {
 */
 var declare = exports.declare = function declare(def) {
     var self = undefined;
-    return self = new Generador(function (s) {
-        return execute(def(self), s);
+    return self = new Generador(function (s, k) {
+        return execute(def(self), s, k);
     });
 };
 
@@ -161,15 +151,17 @@ var declare = exports.declare = function declare(def) {
     Generate a literal value without any transformations applied.
 */
 var lit = exports.lit = function lit(x) {
-    return new Generador(function (s) {
-        return Yield(Pair(x, s), Done);
+    return new Generador(function (s, k) {
+        return Yield(Pair(x, s), k);
     });
 };
 
 /**
     Empty value generator.
 */
-var empty = exports.empty = new Generador(Done);
+var empty = exports.empty = new Generador(function (s, k) {
+    return k(s);
+});
 
 /**
     Generate a literal string value.
@@ -197,15 +189,10 @@ var wrap = exports.wrap = function wrap(x) {
 var next = function next(a, b) {
     a = wrap(a);
     b = wrap(b);
-    var loop = function loop(r) {
-        if (r && r.rest) return Yield(r.first, function (s) {
-            return loop(r.rest(s));
+    return new Generador(function (s, k) {
+        return execute(a, s, function (s) {
+            return execute(b, s, k);
         });
-        return execute(b, r.first);
-    };
-
-    return new Generador(function (s) {
-        return loop(execute(a, s));
     });
 };
 
@@ -238,34 +225,16 @@ Generador.prototype.seq = function () {
     Map function `f` over each element produced by `p`.
 */
 var chain = exports.chain = function chain(p, f) {
-    var loop = function loop(r) {
-        if (r && r.rest) {
-            var _ret = (function () {
-                var r2 = execute(f(r.first.x), r.first.s);
-                if (r2 && r2.rest) return {
-                        v: Yield(r2.first, function (s) {
-                            return loopInner(r2.rest(s), r);
-                        })
-                    };
-                return {
-                    v: loop(r.rest(r2.first))
-                };
-            })();
+    p = wrap(p);
 
-            if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
-        }
-        return r;
+    var loop = function loop(r, k) {
+        return r && r.rest ? execute(f(r.first.x), r.first.s, function (s) {
+            return loop(r.rest(s), k);
+        }) : k(r);
     };
 
-    var loopInner = function loopInner(r, r2) {
-        if (r && r.rest) return Yield(r.first, function (s) {
-            return loopInner(r.rest(s), r2);
-        });
-        return loop(r2.rest(r.first));
-    };
-
-    return new Generador(function (s) {
-        return loop(execute(p, s));
+    return new Generador(function (s, k) {
+        return loop(execute(p, s, id), k);
     });
 };
 
@@ -299,14 +268,14 @@ var combine = exports.combine = function combine(f, z) {
     }
 
     var g = seq.apply(undefined, generators);
-    return new Generador(function (s) {
-        var r = execute(g, s);
-        var lz = z;
-        while (r && r.rest) {
-            lz = f(lz, r.first.x);
-            r = r.rest(r.first.s);
-        }
-        return Yield(Pair(lz, r.first), Done);
+    return declare(function () {
+        var sum = z;
+        return seq(noop(g.map(function (x) {
+            sum = f(sum, x);
+            return x;
+        })), declare(function () {
+            return lit(sum);
+        }));
     });
 };
 
@@ -351,8 +320,8 @@ var weightedChoice = exports.weightedChoice = function weightedChoice(weightMap)
     var table = walker(arrayMap(weightMap, function (x) {
         return [x[0], wrap(x[1])];
     }));
-    return new Generador(function (s) {
-        return execute(table(s.random), s);
+    return new Generador(function (s, k) {
+        return execute(table(s.random), s, k);
     });
 };
 
@@ -428,15 +397,13 @@ var many1 = exports.many1 = function many1(g) {
 
 /* State
  ******************************************************************************/
-var getState = new Generador(function (s) {
-    return Yield(Pair(s, s), function (_) {
-        return Done(s);
-    });
+var getState = new Generador(function (s, k) {
+    return Yield(Pair(s, s), k);
 });
 
 var modifyState = function modifyState(f) {
-    return new Generador(function (s) {
-        return Done(f(s));
+    return new Generador(function (s, k) {
+        return k(f(s));
     });
 };
 
@@ -446,10 +413,9 @@ var modifyState = function modifyState(f) {
     @param name Key of the var.
     @param def Value returned if the variable does not exist.
 */
-var get = exports.get = function get(name) {
-    var def = arguments.length <= 1 || arguments[1] === undefined ? '' : arguments[1];
+var get = exports.get = function get(name, def) {
     return map(getState, function (s) {
-        return State.getVar(s, name, def);
+        return State.getVar(s, name, def === undefined ? '' : def);
     });
 };
 
@@ -517,50 +483,39 @@ var setUd = exports.setUd = function setUd(ud) {
     
     Returns a Javascript iterator.
 */
-var begin = exports.begin = regeneratorRuntime.mark(function begin(g, ud) {
+var begin = exports.begin = function begin(g, ud) {
     var random = arguments.length <= 2 || arguments[2] === undefined ? defaultRandom : arguments[2];
-    var state, r;
-    return regeneratorRuntime.wrap(function begin$(_context) {
-        while (1) switch (_context.prev = _context.next) {
-            case 0:
-                state = State.setRandom(State.setUd(State.empty, ud), random);
-                r = execute(g, state);
 
-            case 2:
-                if (!r.rest) {
-                    _context.next = 9;
-                    break;
-                }
-
+    var state = State.setRandom(State.setUd(State.empty, ud), random);
+    var r = execute(g, state, function () {
+        return null;
+    });
+    var z = {
+        next: function next() {
+            if (r && r.rest) {
+                var x = r.first.x;
                 state = r.first.s;
-                _context.next = 6;
-                return r.first.x;
-
-            case 6:
                 r = r.rest(state);
-                _context.next = 2;
-                break;
-
-            case 9:
-            case 'end':
-                return _context.stop();
+                return { value: x };
+            }
+            return { done: true };
         }
-    }, begin, this);
-});
+    };
+    z[Symbol.iterator] = function () {
+        return z;
+    };
+    return z;
+};
 
-Generador.prototype.begin = regeneratorRuntime.mark(function _callee(ud) {
+Generador.prototype.begin = function (ud) {
     var random = arguments.length <= 1 || arguments[1] === undefined ? defaultRandom : arguments[1];
-    return regeneratorRuntime.wrap(function _callee$(_context2) {
-        while (1) switch (_context2.prev = _context2.next) {
-            case 0:
-                return _context2.delegateYield(begin(this, ud, random), 't0', 1);
 
-            case 1:
-            case 'end':
-                return _context2.stop();
-        }
-    }, _callee, this);
-});
+    return begin(this, ud, random);
+};
+
+Generador.prototype[Symbol.iterator] = function () {
+    return begin(this);
+};
 
 /**
     Left fold over a generator.

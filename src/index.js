@@ -3,22 +3,21 @@
     
     Dada engine inspired library for random text generation.
 */
-require("babel-polyfill");
+"use strict";
 const walker = require('walker-sample');
 
 const arrayMap = Function.prototype.call.bind(Array.prototype.map);
 
 const add = (p, c) => p + c;
 
+const id = x => x;
+
 const defaultRandom = Math.random;
 
 /**
     Value state pair
 */
-const Pair = (x, s) => ({
-    'x': x,
-    's': s
-});
+const Pair = (x, s) => ({ x: x, s: s });
 
 /**
 */
@@ -62,17 +61,11 @@ const Yield = (first, rest) => ({
     rest: rest
 });
 
-const Done = (first) => ({
-    first: first,
-    rest: null
-});
-
 /**
     Run a given generator.
 */
-const execute = (p, s) => {
-    return p._impl(s);
-};
+const execute = (p, s, k) =>
+    p._impl(s, k);
 
 /**
     Declare a generator for self reference or late bindings.
@@ -130,8 +123,8 @@ const execute = (p, s) => {
 */
 export const declare = (def) => {
     let self;
-    return self = new Generador(s =>
-        execute(def(self), s));
+    return self = new Generador((s, k) =>
+        execute(def(self), s, k));
 };
         
 /* Value Generators
@@ -140,13 +133,14 @@ export const declare = (def) => {
     Generate a literal value without any transformations applied.
 */
 export const lit = (x) =>
-    new Generador(s =>
-        Yield(Pair(x, s), Done))
+    new Generador((s, k) =>
+        Yield(Pair(x, s), k));
  
 /**
     Empty value generator.
 */
-export const empty = new Generador(Done);
+export const empty = new Generador((s, k) =>
+    k(s));
 
 /**
     Generate a literal string value.
@@ -173,14 +167,8 @@ export const wrap = (x) =>
 const next = (a, b) => {
     a = wrap(a);
     b = wrap(b);
-    const loop = (r) => {
-        if (r && r.rest)
-            return Yield(r.first, (s) => loop(r.rest(s)));
-        return execute(b, r.first);
-    };
-
-    return new Generador(s =>
-        loop(execute(a, s)));
+    return new Generador((s, k) =>
+        execute(a, s, s => execute(b, s, k)));
 };
 
 /**
@@ -200,25 +188,16 @@ Generador.prototype.seq = function(...generators) {
 /**
     Map function `f` over each element produced by `p`.
 */
-export const chain = (p, f) => {
-    const loop = (r) => {
-        if (r && r.rest) {
-            const r2 = execute(f(r.first.x), r.first.s);
-            if (r2 && r2.rest)
-                return Yield(r2.first, (s) => loopInner(r2.rest(s), r));
-            return loop(r.rest(r2.first));
-        }
-        return r;
-    };
+export const chain = (p, f) => {  
+    p = wrap(p);
+      
+    const loop = (r, k) =>
+        r && r.rest 
+            ?execute(f(r.first.x), r.first.s, s => loop(r.rest(s), k))
+            :k(r);
     
-    const loopInner = (r, r2) => {
-        if (r && r.rest)
-            return Yield(r.first, (s) => loopInner(r.rest(s), r2));
-        return loop(r2.rest(r.first));
-    };
-
-    return new Generador(s =>
-        loop(execute(p, s)));
+    return new Generador((s, k) =>
+        loop(execute(p, s, id), k));
 };
 
 Generador.prototype.chain = function(f) {
@@ -244,14 +223,14 @@ Generador.prototype.map = function(f) {
 */
 export const combine = (f, z, ...generators) => {
     const g = seq(...generators);
-    return new Generador(s => {
-        let r = execute(g, s);
-        let lz = z;
-        while (r && r.rest) {
-            lz = f(lz, r.first.x);
-            r = r.rest(r.first.s);
-        }
-        return Yield(Pair(lz, r.first), Done);
+    return declare(() => {
+        let sum = z;
+        return seq(
+            noop(g.map(x => {
+                sum = f(sum, x);
+                return x;
+            })),
+            declare(() => lit(sum)));
     });
 };
 
@@ -283,8 +262,8 @@ export const noop = (...generators) =>
 */
 export const weightedChoice = (weightMap) => {
     const table = walker(arrayMap(weightMap, x => [x[0], wrap(x[1])]));
-    return new Generador(s =>
-        execute(table(s.random), s));
+    return new Generador((s, k) =>
+        execute(table(s.random), s, k));
 }; 
 
 /**
@@ -346,11 +325,12 @@ export const many1 = (g, prob = 0.5) =>
 
 /* State
  ******************************************************************************/
-const getState = new Generador(s =>
-    Yield(Pair(s, s), _ => Done(s)));
+const getState = new Generador((s, k) =>
+    Yield(Pair(s, s), k));
 
 const modifyState = f =>
-    new Generador(s => Done(f(s)));
+    new Generador((s, k) => 
+        k(f(s)));
 
 /**
     Lookup a stored variable.
@@ -358,8 +338,8 @@ const modifyState = f =>
     @param name Key of the var.
     @param def Value returned if the variable does not exist.
 */
-export const get = (name, def = '') =>
-    map(getState, s => State.getVar(s, name, def));
+export const get = (name, def) =>
+    map(getState, s => State.getVar(s, name, def === undefined ? '' : def));
 
 /**
     Store the value of a variable.
@@ -383,7 +363,7 @@ export const modify = (name, f) =>
 /**
     Return the current user data.
 */
-export const getUd = map(getState, s => s.ud);
+export const getUd= map(getState, s => s.ud);
 
 /**
     Update the user data with function `f`.
@@ -412,16 +392,30 @@ export const setUd = ud =>
     
     Returns a Javascript iterator.
 */
-export const begin = function*(g, ud, random = defaultRandom) {
+export const begin = (g, ud, random = defaultRandom) => {
     let state = State.setRandom(State.setUd(State.empty, ud), random);
-    for (let r = execute(g, state); r.rest; r = r.rest(state)) {
-        state = r.first.s;
-        yield r.first.x;
-    }
+    let r = execute(g, state, () => null);
+    var z = { 
+        next: () => {
+            if (r && r.rest) {
+                const x = r.first.x;
+                state = r.first.s;
+                r = r.rest(state);
+                return { value: x };
+            }
+            return { done: true };
+        }
+    };
+    z[Symbol.iterator] = () => z;
+    return z;
 };
 
-Generador.prototype.begin = function*(ud, random = defaultRandom) {
-    yield* begin(this, ud, random);
+Generador.prototype.begin = function(ud, random = defaultRandom) {
+    return begin(this, ud, random);
+};
+
+Generador.prototype[Symbol.iterator] = function() {
+    return begin(this);
 };
 
 /**

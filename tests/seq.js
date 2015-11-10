@@ -10,7 +10,7 @@ describe('seq', () => {
     });
 
     it('Should yield all values with multiple parameters', () => {
-        const p = pep.begin(pep.seq(pep.str(1), pep.str(2), pep.str(3)));
+        const p = pep.seq(pep.str(1), pep.str(2), pep.str(3));
         assert.deepEqual(['1', '2', '3'], Array.from(p));
     });
 
