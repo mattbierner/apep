@@ -1,5 +1,5 @@
 /**
-    APEN
+    APEP
     
     Dada engine inspired library for random text generation.
 */
