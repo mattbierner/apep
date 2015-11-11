@@ -1,5 +1,5 @@
 /**
-    APEN
+    APEP
     
     Dada engine inspired library for random text generation.
 */
@@ -424,9 +424,10 @@ var modifyState = function modifyState(f) {
     @param name Key of the var.
     @param def Value returned if the variable does not exist.
 */
-var get = exports.get = function get(name, def) {
+var get = exports.get = function get(name) {
+    var def = arguments.length <= 1 || arguments[1] === undefined ? '' : arguments[1];
     return map(getState, function (s) {
-        return State.getVar(s, name, def === undefined ? '' : def);
+        return State.getVar(s, name, def);
     });
 };
 

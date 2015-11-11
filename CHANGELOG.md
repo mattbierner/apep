@@ -1,5 +1,8 @@
 # ChangeLog #
 
+## 1.1.1 - Nov 11, 2015
+* Allow `undefined` to be used as default value in `get`.
+
 ## 1.1.0 - Nov 10, 2015
 * Added `seqa` generator.
 ** Same as `seq` but takes an array-ish of generators.

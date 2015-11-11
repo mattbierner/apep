@@ -347,8 +347,8 @@ const modifyState = f =>
     @param name Key of the var.
     @param def Value returned if the variable does not exist.
 */
-export const get = (name, def) =>
-    map(getState, s => State.getVar(s, name, def === undefined ? '' : def));
+export const get = (name, def = '') =>
+    map(getState, s => State.getVar(s, name, def));
 
 /**
     Store the value of a variable.
