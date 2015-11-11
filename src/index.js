@@ -22,12 +22,6 @@ const defaultRandom = Math.random;
 const Pair = (x, s) => ({ x: x, s: s });
 
 /**
-*/
-const Generador = function(impl) {
-    this._impl = impl;
-};
-
-/**
     Internal state object.
 */
 const State = (random, vars, ud) => ({
@@ -62,6 +56,13 @@ const Yield = (first, rest) => ({
     first: first,
     rest: rest
 });
+
+/**
+    Generator container class.
+*/
+const Generador = function(impl) {
+    this._impl = impl;
+};
 
 /**
     Run a given generator.
@@ -141,22 +142,21 @@ export const lit = (x) =>
 /**
     Empty value generator.
 */
-export const empty = new Generador((s, k) =>
-    k(s));
+export const empty = new Generador((s, k) => k(s));
 
 /**
     Generate a literal string value.
     
     Attempts to convert the input value to a string.
 */
-export const str = function(x) {
-    return arguments.length === 0 ? lit('') : lit('' +  x);
-};
+export const str = (x = '') =>
+    lit('' +  x);
 
 /**
     Ensure value is inside a generator.
     
-    Convert any literals into string literals.
+    Converts arrays into sequences and wraps any other values that are not
+    generators in `str`.
 */
 export const wrap = (x) =>
     x instanceof Generador
@@ -188,7 +188,8 @@ export const seqa = (generators) =>
 /**
     Same as `seqa` but takes values as arguments.
 */
-export const seq = (...generators) => seqa(generators);
+export const seq = (...generators) =>
+    seqa(generators);
 
 Generador.prototype.seq = function(...generators) {
     return seq(this, ...generators);
@@ -299,7 +300,7 @@ export const choice = (...elements) =>
 export const opt = (g, prob = 0.5) => {
     if (prob > 1 || prob < 0) {
         throw {
-            'name': "ManyRangeError",
+            'name': "RangeError",
             'message': "Probability must be between [0, 1]"
         };
     }
@@ -389,6 +390,11 @@ export const modifyUd = f =>
 */
 export const setUd = ud =>
     modifyUd(_ => ud);
+
+/**
+    Get the current random number generator.
+*/
+export const getRandom = map(getState, s => s.random);
 
 /* Execution
  ******************************************************************************/

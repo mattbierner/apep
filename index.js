@@ -34,12 +34,6 @@ var Pair = function Pair(x, s) {
 };
 
 /**
-*/
-var Generador = function Generador(impl) {
-    this._impl = impl;
-};
-
-/**
     Internal state object.
 */
 var State = function State(random, vars, ud) {
@@ -79,6 +73,13 @@ var Yield = function Yield(first, rest) {
         first: first,
         rest: rest
     };
+};
+
+/**
+    Generator container class.
+*/
+var Generador = function Generador(impl) {
+    this._impl = impl;
 };
 
 /**
@@ -172,14 +173,16 @@ var empty = exports.empty = new Generador(function (s, k) {
     
     Attempts to convert the input value to a string.
 */
-var str = exports.str = function str(x) {
-    return arguments.length === 0 ? lit('') : lit('' + x);
+var str = exports.str = function str() {
+    var x = arguments.length <= 0 || arguments[0] === undefined ? '' : arguments[0];
+    return lit('' + x);
 };
 
 /**
     Ensure value is inside a generator.
     
-    Convert any literals into string literals.
+    Converts arrays into sequences and wraps any other values that are not
+    generators in `str`.
 */
 var wrap = exports.wrap = function wrap(x) {
     return x instanceof Generador ? x : Array.isArray(x) ? seqa(x) : str(x);
@@ -370,7 +373,7 @@ var opt = exports.opt = function opt(g) {
 
     if (prob > 1 || prob < 0) {
         throw {
-            'name': "ManyRangeError",
+            'name': "RangeError",
             'message': "Probability must be between [0, 1]"
         };
     }
@@ -483,6 +486,13 @@ var setUd = exports.setUd = function setUd(ud) {
         return ud;
     });
 };
+
+/**
+    Get the current random number generator.
+*/
+var getRandom = exports.getRandom = map(getState, function (s) {
+    return s.random;
+});
 
 /* Execution
  ******************************************************************************/
