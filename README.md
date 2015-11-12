@@ -59,9 +59,11 @@ $ npm install apep
 
 * [Documentation][documentation]
 
+For additionally builtin functionality, check out `[apep-std](https://github.com/mattbierner/apep-std)`. Apep-std is a collection of common generators and combinators that provide many convient operations that are not part of apep-core. The standard library just bundles these all together, but you can also consume the libraries components individually.
 
 ### Examples
 * [Exam question generator](https://github.com/mattbierner/apep/blob/master/examples/exam.js) - Ported from dada engine.
+* [Fifty Shades of Gray excerpt generator](https://github.com/mattbierner/fifty-shades-of-dyspepsia)
 
 If you've used Apep to generate something awesome, please submit a pull request to add it to the list above. The more absurd the better.
 
