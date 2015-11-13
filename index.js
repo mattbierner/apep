@@ -11,6 +11,9 @@ Object.defineProperty(exports, "__esModule", {
 var walker = require('walker-sample');
 
 var arrayMap = Function.prototype.call.bind(Array.prototype.map);
+var arrayFoldr = function arrayFoldr(f, z, a) {
+    return Array.prototype.reduceRight.call(a, f, z);
+};
 
 var add = function add(p, c) {
     return p + c;
@@ -79,14 +82,14 @@ var Yield = function Yield(first, rest) {
     Generator container class.
 */
 var Generador = function Generador(impl) {
-    this._impl = impl;
+    this._apep_generadorImpl = impl;
 };
 
 /**
     Run a given generator.
 */
 var execute = function execute(p, s, k) {
-    return p._impl(s, k);
+    return p._apep_generadorImpl(s, k);
 };
 
 /**
@@ -173,8 +176,7 @@ var empty = exports.empty = new Generador(function (s, k) {
     
     Attempts to convert the input value to a string.
 */
-var str = exports.str = function str() {
-    var x = arguments.length <= 0 || arguments[0] === undefined ? '' : arguments[0];
+var str = exports.str = function str(x) {
     return lit('' + x);
 };
 
@@ -184,8 +186,10 @@ var str = exports.str = function str() {
     Converts arrays into sequences and wraps any other values that are not
     generators in `str`.
 */
-var wrap = exports.wrap = function wrap(x) {
-    return x instanceof Generador ? x : Array.isArray(x) ? seqa(x) : str(x);
+var wrap = function wrap(x) {
+    if (typeof x === 'undefined') throw new TypeError("Cannot convert `undefined` to generator.");
+
+    return x && x._apep_generadorImpl ? x : Array.isArray(x) ? seqa(x) : str(x);
 };
 
 /* Basic Combinators
@@ -210,11 +214,9 @@ var next = function next(a, b) {
     
         seq('a', g1, 3) === seq(str('a'), g1, str(3))
 */
-var seqa = exports.seqa = function seqa(generators) {
-    return generators.reduceRight(function (p, c) {
-        return next(c, p);
-    }, empty);
-};
+var seqa = exports.seqa = arrayFoldr.bind(null, function (p, c) {
+    return next(c, p);
+}, empty);
 
 /**
     Same as `seqa` but takes values as arguments.
@@ -371,12 +373,8 @@ var choice = exports.choice = function choice() {
 var opt = exports.opt = function opt(g) {
     var prob = arguments.length <= 1 || arguments[1] === undefined ? 0.5 : arguments[1];
 
-    if (prob > 1 || prob < 0) {
-        throw {
-            'name': "RangeError",
-            'message': "Probability must be between [0, 1]"
-        };
-    }
+    if (prob > 1 || prob < 0) throw new RangeError("Probability must be between [0, 1]");
+
     if (prob === 0) return empty;else if (prob === 1) return g;
     return weightedChoice([[prob, g], [1 - prob, empty]]);
 };
@@ -566,12 +564,11 @@ Generador.prototype.fold = function (f, z, ud) {
 /**
     Run a generator to completion, combining results into a string.
     
-    @see exec
+    @param g Generator.
+    @param ud Optional user data threaded through the generator's states.
+    @param r Random number generator.
 */
-var run = exports.run = function run(g, ud) {
-    var random = arguments.length <= 2 || arguments[2] === undefined ? defaultRandom : arguments[2];
-    return fold(add, '', g, ud, random);
-};
+var run = exports.run = fold.bind(null, add, '');
 
 Generador.prototype.run = function (ud) {
     var random = arguments.length <= 1 || arguments[1] === undefined ? defaultRandom : arguments[1];

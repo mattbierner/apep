@@ -3,17 +3,15 @@ const pep = require('../index');
 const assert = require('assert');
 
 describe('str', () => {
-
-    it('Should output empty string with no parameters', () => {
-        const p = pep.begin(pep.str());
-        const n = Array.from(p);
-        assert.strictEqual(1, n.length);
-        assert.strictEqual('', n[0]);
-    });
-
     it('Should convert input to string', () => {
-        const p = pep.begin(pep.str(5));
-        assert.deepStrictEqual(['5'], Array.from(p));
+        assert.deepStrictEqual(['5'], Array.from(pep.str(5)));
+        assert.deepStrictEqual(['null'], Array.from(pep.str(null)));
+        assert.deepStrictEqual(['false'], Array.from(pep.str(false)));
+    });
+    
+    it('Should convert undefined to string', () => {
+        assert.deepStrictEqual(['undefined'], Array.from(pep.str(undefined)));
+        assert.deepStrictEqual(['undefined'], Array.from(pep.str()));
     });
 
     it('Should convert custom object to string', () => {
@@ -22,5 +20,4 @@ describe('str', () => {
         const p = pep.run(pep.str(o));
         assert.strictEqual('abc', p);
     });
-
 });

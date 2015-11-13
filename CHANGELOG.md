@@ -1,5 +1,13 @@
 # ChangeLog #
 
+## 1.3.0 - Nov 12, 2015
+* Auto wrapping of generators now throws a `TypeError` if an `undefined` value is used.
+** This is useful for large grammars because having `undefined` values is almost always a coding error.
+* Further clarified behavior of `pep.str()`.
+** Now will always convert input arg to string, even if the arg is undefined.
+* Changed `opt` and `many` and `many1` to throw a `RangeError` instead of a custom error type.
+* Allow `seqa` to take any array-ish object instead of requiring a real array.
+
 ## 1.2.0 - Nov 10, 2015
 * Expose `getRandom` to get the current random number generator.
 

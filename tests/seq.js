@@ -22,6 +22,15 @@ describe('seq', () => {
         assert.deepStrictEqual(['1'], Array.from(p2));
     });
     
+     it('Should throw an error if undefined is wrapped', () => {
+        assert.throws(() => {
+            const p = pep.seq(undefined);
+        })
+        assert.throws(() => {
+            const p = pep.seq(1, "abc", undefined, false);
+        })
+    });
+    
     it('Should not wrap literal generators', () => {
         const p = pep.begin(pep.seq(pep.lit([1, 2]), "abc", pep.lit(false)));
         assert.deepStrictEqual([[1, 2], 'abc', false], Array.from(p));

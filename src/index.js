@@ -7,6 +7,7 @@
 const walker = require('walker-sample');
 
 const arrayMap = Function.prototype.call.bind(Array.prototype.map);
+const arrayFoldr = (f, z, a) => Array.prototype.reduceRight.call(a, f, z);
 
 const add = (p, c) => p + c;
 
@@ -61,14 +62,14 @@ const Yield = (first, rest) => ({
     Generator container class.
 */
 const Generador = function(impl) {
-    this._impl = impl;
+    this._apep_generadorImpl = impl;
 };
 
 /**
     Run a given generator.
 */
 const execute = (p, s, k) =>
-    p._impl(s, k);
+    p._apep_generadorImpl(s, k);
 
 /**
     Declare a generator for self reference or late bindings.
@@ -149,8 +150,7 @@ export const empty = new Generador((s, k) => k(s));
     
     Attempts to convert the input value to a string.
 */
-export const str = (x = '') =>
-    lit('' +  x);
+export const str = (x) => lit('' +  x);
 
 /**
     Ensure value is inside a generator.
@@ -158,10 +158,14 @@ export const str = (x = '') =>
     Converts arrays into sequences and wraps any other values that are not
     generators in `str`.
 */
-export const wrap = (x) =>
-    x instanceof Generador
+const wrap = (x) => {
+    if (typeof x === 'undefined')
+        throw new TypeError("Cannot convert `undefined` to generator.");
+    
+    return x && x._apep_generadorImpl
         ?x
-        :Array.isArray(x) ? seqa(x) : str(x);  
+        :Array.isArray(x) ? seqa(x) : str(x);
+};
       
 /* Basic Combinators
  ******************************************************************************/
@@ -182,14 +186,12 @@ const next = (a, b) => {
     
         seq('a', g1, 3) === seq(str('a'), g1, str(3))
 */
-export const seqa = (generators) =>
-    generators.reduceRight((p, c) => next(c, p), empty);
+export const seqa = arrayFoldr.bind(null, (p, c) => next(c, p), empty);
 
 /**
     Same as `seqa` but takes values as arguments.
 */
-export const seq = (...generators) =>
-    seqa(generators);
+export const seq = (...generators) => seqa(generators);
 
 Generador.prototype.seq = function(...generators) {
     return seq(this, ...generators);
@@ -291,19 +293,15 @@ export const choicea = (elements) =>
      
      @see choicea
 */
-export const choice = (...elements) =>
-    choicea(elements);
+export const choice = (...elements) => choicea(elements);
 
 /**
     Generator that optionally produces a value.
 */
 export const opt = (g, prob = 0.5) => {
-    if (prob > 1 || prob < 0) {
-        throw {
-            'name': "RangeError",
-            'message': "Probability must be between [0, 1]"
-        };
-    }
+    if (prob > 1 || prob < 0)
+        throw new RangeError("Probability must be between [0, 1]");
+    
     if (prob === 0)
         return empty;
     else if (prob === 1) 
@@ -321,7 +319,7 @@ export const opt = (g, prob = 0.5) => {
         1 means that `g` is run infinity, while 0 means that `g` is never run.
 */
 export const many = (g, prob = 0.5) => {
-    let self; 
+    let self;
     return self = opt(seq(g, declare(() => self)), prob);
 };
 
@@ -339,8 +337,7 @@ const getState = new Generador((s, k) =>
     Yield(Pair(s, s), k));
 
 const modifyState = f =>
-    new Generador((s, k) => 
-        k(f(s)));
+    new Generador((s, k) => k(f(s)));
 
 /**
     Lookup a stored variable.
@@ -458,11 +455,12 @@ Generador.prototype.fold = function(f, z, ud, random = defaultRandom) {
 /**
     Run a generator to completion, combining results into a string.
     
-    @see exec
+    @param g Generator.
+    @param ud Optional user data threaded through the generator's states.
+    @param r Random number generator.
 */
-export const run = (g, ud, random = defaultRandom) =>
-    fold(add, '', g, ud, random);
-
+export const run = fold.bind(null, add, '');
+    
 Generador.prototype.run = function(ud, random = defaultRandom) {
     return run(this, ud, random);
 };
