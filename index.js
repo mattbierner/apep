@@ -62,7 +62,7 @@ State.setRandom = function (s, random) {
 };
 
 State.getVar = function (s, name, def) {
-    return s.vars.hasOwnProperty(name) ? s.vars[name] : def;
+    return typeof s.vars[name] === 'undefined' ? def : s.vars[name];
 };
 
 State.setVar = function (s, name, value) {

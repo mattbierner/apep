@@ -1,5 +1,8 @@
 # ChangeLog #
 
+## 1.3.1 - Nov 14, 2015
+* Fixed only able to set one var at at time.
+
 ## 1.3.0 - Nov 12, 2015
 * Auto wrapping of generators now throws a `TypeError` if an `undefined` value is used.
 ** This is useful for large grammars because having `undefined` values is almost always a coding error.

@@ -43,9 +43,7 @@ State.setRandom = (s, random) =>
     State(random, s.vars, s.ud);
 
 State.getVar = (s, name, def) =>
-    s.vars.hasOwnProperty(name)
-        ? s.vars[name]
-        : def;
+    typeof s.vars[name] === 'undefined' ? def : s.vars[name];
 
 State.setVar = (s, name, value) => {
     const newVars = Object.create(s.vars);

@@ -24,11 +24,13 @@ describe('Vars', function () {
         assert.strictEqual('ab3c', pep.run(p));
     });
     
-    it('work properly in chain.', function () {
-        const p = pep.seq(pep.set('a', 3), 'b', 'c')
-            .chain(x => pep.seq(x, pep.set('a', x), x))
-            .seq(pep.get('a'));
-        assert.strictEqual('bbccc', pep.run(p));
+     it('should support multiple vars.', function () {
+        const p = pep.seq(
+            pep.set('a', 1),
+            pep.set('b', 2),
+            pep.get('a'),
+            pep.get('b'));
+        assert.deepStrictEqual([1, 2], Array.from(p));
     });
 });
 

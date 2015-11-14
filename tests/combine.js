@@ -26,4 +26,12 @@ describe('combine', () => {
         const n = Array.from(p);
         assert.deepStrictEqual([[[[['x', 'a'], 'b'], 'c'], 'd']], n);
     });
+    
+     it('Should preserve state properly.', function () {
+        const p = pep.seq(
+            pep.set('a', 3),
+            pep.combine((p, c) => [p, c], 'x', 'a', pep.set('a', 4), 'b',  pep.set('a', 5)),
+            pep.get('a'));
+        assert.deepStrictEqual([[['x', 'a'], 'b'], 5], Array.from(p));
+    });
 });

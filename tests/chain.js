@@ -37,4 +37,12 @@ describe('chain', () => {
         const n = Array.from(pep.begin(p));
         assert.deepStrictEqual([1, 10, 100, 1, 10, 100, 2, 20, 200, 2, 20, 200], n);
     });
+    
+    it('Should preserve state properly.', function () {
+        const p = pep.set('a', 3)
+            .seq('b', 'c')
+            .chain(x => pep.seq(x, pep.set('a', x), x))
+            .seq(pep.get('a'));
+        assert.strictEqual('bbccc', pep.run(p));
+    });
 });
