@@ -63,7 +63,9 @@ For additionally builtin functionality, check out [apep-std](https://github.com/
 
 ### Examples
 * [Exam question generator](https://github.com/mattbierner/apep/blob/master/examples/exam.js) - Ported from dada engine.
-* [Fifty Shades of Gray excerpt generator](https://github.com/mattbierner/fifty-shades-of-dyspepsia)
+* [Fifty Shades of Dispepsia](https://github.com/mattbierner/fifty-shades-of-dyspepsia) - *Fifty Shades of Gray* excerpt generator
+* [Post Apeptide](https://github.com/mattbierner/post-apeptide) - Port of [Andrew C. Bulhak's Post modernism generator Dada Engine Text Generator](http://www.elsewhere.org/pomo/).
+
 
 If you've used Apep to generate something awesome, please submit a pull request to add it to the list above. The more absurd the better.
 
